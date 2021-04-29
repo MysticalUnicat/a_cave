@@ -27,9 +27,17 @@
 
 #define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, alias_ecs_create_instance(NULL, &inner);)
 
+#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS) \
+  struct IDENT FIELDS; \
+  LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
+
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
 DEFINE_WORLD(World)
+
+DEFINE_COMPONENT(World(), Position, {
+  int x; int y;
+})
 
 int main(int argc, char * argv []) {
   int screen_width = 800;
@@ -48,6 +56,8 @@ int main(int argc, char * argv []) {
 
     EndDrawing();
   }
+
+  CloseWindow();
   
   return 0;
 }
