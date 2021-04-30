@@ -31,13 +31,20 @@
   struct IDENT FIELDS; \
   LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
 
+#define DEFINE_QUERY(WORLD, R_COUNT, ...) \
+  LAZY_GLOBAL(
+
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
 DEFINE_WORLD(World)
 
 DEFINE_COMPONENT(World(), Position, {
-  int x; int y;
+  Vector2 position;
 })
+
+DEFINE_COMPONENT(World(), Text, {
+  const char * text;
+});
 
 int main(int argc, char * argv []) {
   int screen_width = 800;
