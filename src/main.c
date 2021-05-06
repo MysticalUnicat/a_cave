@@ -81,6 +81,9 @@ int main(int argc, char * argv []) {
 
     //DrawTextEx(*Romulus(), "A CAVE", (Vector2) { 0, 0 }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
     RUN_QUERY(World(), RenderableText()) {
+      const struct Position * position = (const struct Position *)data[0];
+      const struct Text * text = (const struct Text *)data[1];
+      DrawTextEx(*Romulus(), text->text, position->position, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
     }
 
     EndDrawing();
