@@ -43,6 +43,15 @@
     }, &inner);                                                   \
   )
 
+#define _CAT1(x, y) x ## y
+#define _CAT0(x, y) _CAT1(x, y)
+#define CAT(x, y) _CAT0(x, y)
+
+#define RUN_QUERY(WORLD, QUERY) \
+  auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data); \
+  alias_ecs_execute_query(WORLD, QUERY, (alias_ecs_QueryCB) { CAT(query_fn_, __LINE__), NULL }); \
+  auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
+
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
 DEFINE_WORLD(World)
@@ -70,7 +79,9 @@ int main(int argc, char * argv []) {
 
     ClearBackground(BLACK);
 
-    DrawTextEx(*Romulus(), "A CAVE", (Vector2) { 0, 0 }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
+    //DrawTextEx(*Romulus(), "A CAVE", (Vector2) { 0, 0 }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
+    RUN_QUERY(World(), RenderableText()) {
+    }
 
     EndDrawing();
   }
