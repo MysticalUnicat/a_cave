@@ -1,26 +1,26 @@
 #include <alias/ecs.h>
 #include <raylib.h>
 
-#define LAZY_GLOBAL(TYPE, IDENT, CODE) \
-  TYPE IDENT (void) {                  \
-    static TYPE inner;                 \
-    static int init = 0;               \
-    if(init == 0) {                    \
-      CODE                             \
-      init = 1;                        \
-    }                                  \
-    return inner;                      \
+#define LAZY_GLOBAL(TYPE, IDENT, ...) \
+  TYPE IDENT (void) {                 \
+    static TYPE inner;                \
+    static int init = 0;              \
+    if(init == 0) {                   \
+      __VA_ARGS__                     \
+      init = 1;                       \
+    }                                 \
+    return inner;                     \
   }
 
-#define LAZY_GLOBAL_PTR(TYPE, IDENT, CODE) \
-  TYPE * IDENT (void) {                    \
-    static TYPE inner;                     \
-    static TYPE * __ptr = NULL;            \
-    if(__ptr == NULL) {                    \
-      CODE                                 \
-      __ptr = &inner;                      \
-    }                                      \
-    return __ptr;                          \
+#define LAZY_GLOBAL_PTR(TYPE, IDENT, ...) \
+  TYPE * IDENT (void) {                   \
+    static TYPE inner;                    \
+    static TYPE * __ptr = NULL;           \
+    if(__ptr == NULL) {                   \
+      __VA_ARGS__                         \
+      __ptr = &inner;                     \
+    }                                     \
+    return __ptr;                         \
   }
 
 #define DEFINE_FONT(IDENT, PATH) LAZY_GLOBAL_PTR(Font, IDENT, inner = LoadFont(PATH);)
@@ -31,8 +31,17 @@
   struct IDENT FIELDS; \
   LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
 
-#define DEFINE_QUERY(WORLD, R_COUNT, ...) \
-  LAZY_GLOBAL(
+#define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
+  LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
+    alias_ecs_ComponentHandle handles[] = { __VA_ARGS__ };        \
+    uint32_t handle_count = sizeof(handles) / sizeof(handles[0]); \
+    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {  \
+      .num_write_components = W_COUNT,                            \
+      .write_components = handles,                                \
+      .num_read_components = handle_count - W_COUNT,              \
+      .read_components = handles + W_COUNT,                       \
+    }, &inner);                                                   \
+  )
 
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
@@ -45,6 +54,8 @@ DEFINE_COMPONENT(World(), Position, {
 DEFINE_COMPONENT(World(), Text, {
   const char * text;
 });
+
+DEFINE_QUERY(World(), RenderableText, 0, Position_component(), Text_component());
 
 int main(int argc, char * argv []) {
   int screen_width = 800;
