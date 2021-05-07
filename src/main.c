@@ -12,8 +12,6 @@ DEFINE_COMPONENT(World(), Text, {
   const char * text;
 });
 
-DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
-
 int main(int argc, char * argv []) {
   int screen_width = 800;
   int screen_height = 600;
