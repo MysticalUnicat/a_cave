@@ -159,5 +159,29 @@
       MAP(_QUERY_rparam, __VA_ARGS__)                                                                                            \
   )
 
+struct Cmd {
+  uint32_t size;
+  enum {
+    cmd_add_component,
+    cmd_remove_component,
+    cmd_despawn
+  } tag;
+  alias_ecs_EntityHandle entity;
+  alias_ecs_ComponentHandle component;
+};
+
+struct CmdBuf {
+  void * start;
+  void * pointer;
+  void * end;
+};
+
+void CmdBuf_add_component(struct CmdBuf * cbuf, alias_ecs_EntityHandle entity, alias_ecs_ComponentHandle component, void * data, size_t data_size);
+void CmdBuf_remove_component(struct CmdBuf * cbuf, alias_ecs_EntityHandle entity, alias_ecs_ComponentHandle component);
+void CmdBuf_despawn(struct CmdBuf * cbuf, alias_ecs_EntityHandle entity);
+void CmdBuf_begin_recording(struct CmdBuf * cbuf);
+void CmdBuf_end_recording(struct CmdBuf * cbuf);
+void CmdBuf_execute(struct CmdBuf * cbuf, alias_ecs_Instance * instance);
+
 #endif // _UTIL_H_
 

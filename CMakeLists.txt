@@ -8,6 +8,7 @@ add_subdirectory(ext/raylib)
 
 add_executable(a_cave
   src/main.c
+  src/cbuf.c
 )
 
 target_link_libraries(a_cave alias raylib)
