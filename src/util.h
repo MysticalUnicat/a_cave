@@ -36,13 +36,16 @@
 
 #define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, ECS(create_instance, NULL, &inner);)
 
-#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS)                                                                 \
-  struct IDENT FIELDS;                                                                                         \
-  LAZY_GLOBAL(                                                                                                 \
-    alias_ecs_ComponentHandle,                                                                                 \
-    IDENT##_component,                                                                                         \
-    ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
+#define DEFINE_SIMPLE_COMPONENT(WORLD, IDENT, TYPE)                                                    \
+  LAZY_GLOBAL(                                                                                         \
+    alias_ecs_ComponentHandle,                                                                         \
+    IDENT##_component,                                                                                 \
+    ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(TYPE) }, &inner); \
   )
+
+#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS)        \
+  struct IDENT FIELDS;                                \
+  DEFINE_SIMPLE_COMPONENT(WORLD, IDENT, struct IDENT)
 
 #define GET_COMPONENT(X) X ## _component (),
 
