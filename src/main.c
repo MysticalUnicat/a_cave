@@ -47,10 +47,57 @@
 #define _CAT0(x, y) _CAT1(x, y)
 #define CAT(x, y) _CAT0(x, y)
 
+#define EM_NONE(...)
+#define EM_ZERO(...) 0
+#define EM_ALL(...) __VA_ARGS__
+
+#define FIRST(X, ...) X
+#define SECOND(X, ...) FIRST(__VA_ARGS__)
+
+#define PROBE() ~, 1
+#define IS_PROBE(...) SECOND(__VA_ARGS__, 0)
+
+#define NOT(X) IS_PROBE(CAT(_NOT_, X))
+#define _NOT_0 PROBE()
+
+#define BOOL(X) NOT(NOT(X))
+
+#define IF_ELSE(X) _IF_ELSE(BOOL(X))
+#define _IF_ELSE(X) CAT(_IF_, X)
+#define _IF_1(...) __VA_ARGS__ EM_NONE
+#define _IF_0(...) EM_ALL
+
+#define EVAL(...) _EVAL_1024(__VA_ARGS__)
+#define _EVAL_1024(...) _EVAL_512(_EVAL_512(__VA_ARGS__))
+#define _EVAL_512(...) _EVAL_256(_EVAL_256(__VA_ARGS__))
+#define _EVAL_256(...) _EVAL_128(_EVAL_128(__VA_ARGS__))
+#define _EVAL_128(...) _EVAL_64(_EVAL_64(__VA_ARGS__))
+#define _EVAL_64(...) _EVAL_32(_EVAL_32(__VA_ARGS__))
+#define _EVAL_32(...) _EVAL_16(_EVAL_16(__VA_ARGS__))
+#define _EVAL_16(...) _EVAL_8(_EVAL_8(__VA_ARGS__))
+#define _EVAL_8(...) _EVAL_4(_EVAL_4(__VA_ARGS__))
+#define _EVAL_4(...) _EVAL_2(_EVAL_2(__VA_ARGS__))
+#define _EVAL_2(...) _EVAL_1(_EVAL_1(__VA_ARGS__))
+#define _EVAL_1(...) __VA_ARGS__
+
+#define DEFER1(X) X EM_NONE()
+#define DEFER2(X) X EM_NONE EM_NONE()()
+
+#define HAS_ARGS(...) BOOL(FIRST(EM_ZERO __VA_ARGS__)())
+
+#define MAP(F, X, ...)             \
+  F(X)                             \
+  IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
+    DEFER2(_MAP)()(F, __VA_ARGS__) \
+  )( /* nothing */ )
+#define _MAP MAP
+
 #define RUN_QUERY(WORLD, QUERY) \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data); \
   alias_ecs_execute_query(WORLD, QUERY, (alias_ecs_QueryCB) { CAT(query_fn_, __LINE__), NULL }); \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
+
+#define SPAWN(...)
 
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
@@ -66,6 +113,8 @@ DEFINE_COMPONENT(World(), Text, {
 
 DEFINE_QUERY(World(), RenderableText, 0, Position_component(), Text_component());
 
+
+
 int main(int argc, char * argv []) {
   int screen_width = 800;
   int screen_height = 600;
@@ -73,6 +122,9 @@ int main(int argc, char * argv []) {
   InitWindow(screen_width, screen_height, "a_cave");
 
   SetTargetFPS(60);
+
+  SPAWN(Position, { .position = (Vector2) { 0, 0 } },
+            Text, { .text = "A CAVE" });
 
   while(!WindowShouldClose()) {
     BeginDrawing();
