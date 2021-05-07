@@ -171,8 +171,6 @@ int main(int argc, char * argv []) {
 
     ClearBackground(BLACK);
 
-    alias_ecs_ComponentHandle h = _pp_eval() 0;
-
     //DrawTextEx(*Romulus(), "A CAVE", (Vector2) { 0, 0 }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
     QUERY(World(), ( read, Position, position ), ( read, Text, text )) {
     //RUN_QUERY(World(), RenderableText()) {
