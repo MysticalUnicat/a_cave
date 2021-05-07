@@ -140,7 +140,6 @@ static inline void draw(void) {
   ClearBackground(BLACK);
 
   QUERY(World(), ( read, Position, position ), ( read, Text, text )) {
-    printf("draw %p %p\n", position, text);
     DrawTextEx(
         *text->font
       , text->text
