@@ -85,12 +85,21 @@
 
 #define HAS_ARGS(...) BOOL(FIRST(EM_ZERO __VA_ARGS__)())
 
-#define MAP(F, X, ...)             \
+#define MAP(...) EVAL(MAP(__VA_ARGS__))
+#define _MAP(F, X, ...)             \
   F(X)                             \
   IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
-    DEFER2(_MAP)()(F, __VA_ARGS__) \
+    DEFER2(__MAP)()(F, __VA_ARGS__) \
   )( /* nothing */ )
-#define _MAP MAP
+#define __MAP _MAP
+
+#define MAP2(...) EVAL(MAP2(__VA_ARGS__))
+#define _MAP2(F, X, Y, ...)         \
+  F(X, Y)                          \
+  IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
+    DEFER2(__MAP2)()(F, __VA_ARGS__) \
+  )( /* nothing */ )
+#define __MAP2 _MAP2
 
 #define RUN_QUERY(WORLD, QUERY) \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data); \
