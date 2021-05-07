@@ -9,6 +9,8 @@
 
 #include "pp.h"
 
+#define Entity alias_ecs_EntityHandle
+
 #define LAZY_GLOBAL(TYPE, IDENT, ...) \
   TYPE IDENT (void) {                 \
     static TYPE inner;                \

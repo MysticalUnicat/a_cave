@@ -154,7 +154,7 @@ int main(int argc, char * argv []) {
 
   SetTargetFPS(60);
 
-  SPAWN(
+  Entity text = SPAWN(
     World(),
     ( Position, .pos = (Vector2) { .x = 0.0f, .y = 0.0f }  ),
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
