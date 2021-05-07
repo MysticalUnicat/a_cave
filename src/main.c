@@ -37,7 +37,7 @@ int main(int argc, char * argv []) {
     }
 
     QUERY(World(), ( write, Position, position )) {
-      position->x += 1;
+      position->x += GetFrameTime() * 10;
     }
 
     EndDrawing();
