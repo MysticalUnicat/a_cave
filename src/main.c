@@ -113,15 +113,17 @@
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
 
 #define SPAWN_COMPONENT(...) EVAL(SPAWN_COMPONENT_ __VA_ARGS__),
-#define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)(struct TYPE[]) { __VA_ARGS__ } }
+#define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } }
 
 #define SPAWN(WORLD, ...) do {                                                          \
+  alias_ecs_EntityHandle _entity;                                                       \
   alias_ecs_EntitySpawnComponent _components[] = { MAP(SPAWN_COMPONENT, __VA_ARGS__) }; \
-  alias_ecs_spawn(WORLD, &(alias_ecs_EntitySpawnInfo) {                                 \
+  ECS(spawn, WORLD, &(alias_ecs_EntitySpawnInfo) {                                      \
+    .layer = ALIAS_ECS_INVALID_LAYER,                                                   \
     .count = 1,                                                                         \
     .num_components = sizeof(_components) / sizeof(_components[0]),                     \
     .components = _components                                                           \
-  }, NULL);                                                                             \
+  }, &_entity);                                                                         \
 } while(0)
 
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
@@ -148,8 +150,8 @@ int main(int argc, char * argv []) {
 
   SPAWN(
     World(),
-    ( Position, { .position = (Vector2) { 0, 0 } } ),
-    (     Text, { .text = "A CAVE" } )
+    ( Position, .position = (Vector2) { 0, 0 } ),
+    (     Text, .text = "A CAVE" )
   );
 
   while(!WindowShouldClose()) {
