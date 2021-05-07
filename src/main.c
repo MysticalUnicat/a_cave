@@ -110,14 +110,24 @@ DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
 #define _QUERY_rparam_read(TYPE, NAME)  , struct TYPE * NAME
 #define _QUERY_rparam_write(...)
 
+#define _QUERY_wext(...)               _QUERY_wext_ __VA_ARGS__               // unwrap
+#define _QUERY_wext_(KIND, ...)        CAT(_QUERY_wext_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_wext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
+#define _QUERY_wext_read(...)
+
+#define _QUERY_rext(...)               _QUERY_rext_ __VA_ARGS__               // unwrap
+#define _QUERY_rext_(KIND, ...)        CAT(_QUERY_rext_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_rext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
+#define _QUERY_rext_read(...)
+
 #define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
 #define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_warg_write(TYPE, _NAME)  , (struct TYPE *)data[i++]
+#define _QUERY_warg_write(_TYPE, NAME)  NAME
 #define _QUERY_warg_read(...)
 
 #define _QUERY_rarg(...)                _QUERY_rarg_ __VA_ARGS__               // unwrap
 #define _QUERY_rarg_(KIND, ...)         CAT(_QUERY_rarg_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_rarg_read(TYPE, _NAME)   , (struct TYPE *)data[i++]
+#define _QUERY_rarg_read(_TYPE, NAME)   NAME
 #define _QUERY_rarg_write(...)
 
 #define QUERY(WORLD, ...)                                                                                                        \
@@ -141,7 +151,9 @@ DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
   );                                                                                                                             \
   void CAT(query_fn0_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {   \
     uint32_t i = 0;                                                                                                              \
-    CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));                  \
+    MAP(_QUERY_wext, __VA_ARGS__) \
+    MAP(_QUERY_rext, __VA_ARGS__) \
+    /*CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));*/                  \
   }                                                                                                                              \
   alias_ecs_execute_query(WORLD, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
   auto void CAT(query_fn_, __LINE__)                                                                                             \
