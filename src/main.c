@@ -124,8 +124,8 @@
   alias_ecs_execute_query(WORLD, QUERY, (alias_ecs_QueryCB) { CAT(query_fn_, __LINE__), NULL }); \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
 
-#define SPAWN_COMPONENT(...) _EVAL_2(SPAWN_COMPONENT_ __VA_ARGS__),
-#define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } }
+#define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
+#define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },
 
 #define SPAWN(WORLD, ...) do {                                                          \
   alias_ecs_EntityHandle _entity;                                                       \
@@ -160,14 +160,11 @@ int main(int argc, char * argv []) {
 
   SetTargetFPS(60);
 
-  #define P(X) printf("%s", #X);
-  MAP(P, foo, bar, baz);
-
-  //SPAWN(
-  //  World(),
-  //  ( Position, .position = (Vector2) { 0, 0 } ),
-  //  (     Text, .text = "A CAVE" )
-  //);
+  SPAWN(
+    World(),
+    ( Position, .position = (Vector2) { 0, 0 } ),
+    (     Text, .text = "A CAVE" )
+  );
 
   while(!WindowShouldClose()) {
     BeginDrawing();
