@@ -155,6 +155,8 @@ int main(int argc, char * argv []) {
       const struct Position * position = (const struct Position *)data[0];
       const struct Text * text = (const struct Text *)data[1];
       DrawTextEx(*Romulus(), text->text, position->position, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
+
+      printf("tried to draw!\n");
     }
 
     EndDrawing();
