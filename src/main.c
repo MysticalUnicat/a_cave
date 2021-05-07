@@ -5,7 +5,8 @@ DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 DEFINE_WORLD(World)
 
 DEFINE_COMPONENT(World(), Position, {
-  Vector2 position;
+  float x;
+  float y;
 })
 
 DEFINE_COMPONENT(World(), Text, {
@@ -22,8 +23,8 @@ int main(int argc, char * argv []) {
 
   SPAWN(
     World(),
-    ( Position, .position = (Vector2) { 0, 0 } ),
-    (     Text, .text = "A CAVE" )
+    ( Position, .x = 0.0f, .y = 0.0f ),
+    (     Text, .text = "A CAVE"     )
   );
 
   while(!WindowShouldClose()) {
@@ -32,11 +33,11 @@ int main(int argc, char * argv []) {
     ClearBackground(BLACK);
 
     QUERY(World(), ( read, Position, position ), ( read, Text, text )) {
-      DrawTextEx(*Romulus(), text->text, position->position, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
+      DrawTextEx(*Romulus(), text->text, (Vector2) { .x = position->x, .y = position->y }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
     }
 
     QUERY(World(), ( write, Position, position )) {
-      position->position.x += 1;
+      position->x += 1;
     }
 
     EndDrawing();
