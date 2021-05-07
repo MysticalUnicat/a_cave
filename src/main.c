@@ -1,48 +1,6 @@
 #include <alias/ecs.h>
 #include <raylib.h>
 
-#define LAZY_GLOBAL(TYPE, IDENT, ...) \
-  TYPE IDENT (void) {                 \
-    static TYPE inner;                \
-    static int init = 0;              \
-    if(init == 0) {                   \
-      __VA_ARGS__                     \
-      init = 1;                       \
-    }                                 \
-    return inner;                     \
-  }
-
-#define LAZY_GLOBAL_PTR(TYPE, IDENT, ...) \
-  TYPE * IDENT (void) {                   \
-    static TYPE inner;                    \
-    static TYPE * __ptr = NULL;           \
-    if(__ptr == NULL) {                   \
-      __VA_ARGS__                         \
-      __ptr = &inner;                     \
-    }                                     \
-    return __ptr;                         \
-  }
-
-#define DEFINE_FONT(IDENT, PATH) LAZY_GLOBAL_PTR(Font, IDENT, inner = LoadFont(PATH);)
-
-#define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, alias_ecs_create_instance(NULL, &inner);)
-
-#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS) \
-  struct IDENT FIELDS; \
-  LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
-
-#define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
-  LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
-    alias_ecs_ComponentHandle handles[] = { __VA_ARGS__ };        \
-    uint32_t handle_count = sizeof(handles) / sizeof(handles[0]); \
-    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {  \
-      .num_write_components = W_COUNT,                            \
-      .write_components = handles,                                \
-      .num_read_components = handle_count - W_COUNT,              \
-      .read_components = handles + W_COUNT,                       \
-    }, &inner);                                                   \
-  )
-
 #define _CAT1(x, y) x ## y
 #define _CAT0(x, y) _CAT1(x, y)
 #define CAT(x, y) _CAT0(x, y)
@@ -85,28 +43,79 @@
 
 #define HAS_ARGS(...) BOOL(FIRST(EM_ZERO __VA_ARGS__)())
 
-#define MAP(...) EVAL(MAP(__VA_ARGS__))
+#define MAP(...) EVAL(_MAP(__VA_ARGS__))
+#define __MAP _MAP
 #define _MAP(F, X, ...)             \
   F(X)                             \
   IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
     DEFER2(__MAP)()(F, __VA_ARGS__) \
   )( /* nothing */ )
-#define __MAP _MAP
 
-#define MAP2(...) EVAL(MAP2(__VA_ARGS__))
+#define MAP2(...) _EVAL_64(_MAP2(__VA_ARGS__))
+#define __MAP2 _MAP2
 #define _MAP2(F, X, Y, ...)         \
   F(X, Y)                          \
   IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
     DEFER2(__MAP2)()(F, __VA_ARGS__) \
   )( /* nothing */ )
-#define __MAP2 _MAP2
+#define LAZY_GLOBAL(TYPE, IDENT, ...) \
+  TYPE IDENT (void) {                 \
+    static TYPE inner;                \
+    static int init = 0;              \
+    if(init == 0) {                   \
+      __VA_ARGS__                     \
+      init = 1;                       \
+    }                                 \
+    return inner;                     \
+  }
+
+#define LAZY_GLOBAL_PTR(TYPE, IDENT, ...) \
+  TYPE * IDENT (void) {                   \
+    static TYPE inner;                    \
+    static TYPE * __ptr = NULL;           \
+    if(__ptr == NULL) {                   \
+      __VA_ARGS__                         \
+      __ptr = &inner;                     \
+    }                                     \
+    return __ptr;                         \
+  }
+
+#define DEFINE_FONT(IDENT, PATH) LAZY_GLOBAL_PTR(Font, IDENT, inner = LoadFont(PATH);)
+
+#define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, alias_ecs_create_instance(NULL, &inner);)
+
+#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS) \
+  struct IDENT FIELDS; \
+  LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
+
+#define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
+  LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
+    alias_ecs_ComponentHandle handles[] = { __VA_ARGS__ };        \
+    uint32_t handle_count = sizeof(handles) / sizeof(handles[0]); \
+    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {  \
+      .num_write_components = W_COUNT,                            \
+      .write_components = handles,                                \
+      .num_read_components = handle_count - W_COUNT,              \
+      .read_components = handles + W_COUNT,                       \
+    }, &inner);                                                   \
+  )
 
 #define RUN_QUERY(WORLD, QUERY) \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data); \
   alias_ecs_execute_query(WORLD, QUERY, (alias_ecs_QueryCB) { CAT(query_fn_, __LINE__), NULL }); \
   auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
 
-#define SPAWN(...)
+#define SPAWN_COMPONENT(...) EVAL(SPAWN_COMPONENT_ __VA_ARGS__),
+#define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)(struct TYPE[]) { __VA_ARGS__ } }
+
+#define SPAWN(WORLD, ...) do {                                                           \
+  alias_ecs_EntitySpawnComponent _components[] = { MAP(SPAWN_COMPONENT, __VA_ARGS__) }; \
+  alias_ecs_spawn(WORLD, &(alias_ecs_EntitySpawnInfo) {                                  \
+    .count = 1,                                                                          \
+    .num_components = sizeof(_components) / sizeof(_components[0]),                      \
+    .components = _components                                                            \
+  }, NULL);                                                                              \
+} while(0)
 
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
@@ -122,8 +131,6 @@ DEFINE_COMPONENT(World(), Text, {
 
 DEFINE_QUERY(World(), RenderableText, 0, Position_component(), Text_component());
 
-
-
 int main(int argc, char * argv []) {
   int screen_width = 800;
   int screen_height = 600;
@@ -132,8 +139,11 @@ int main(int argc, char * argv []) {
 
   SetTargetFPS(60);
 
-  SPAWN(Position, { .position = (Vector2) { 0, 0 } },
-            Text, { .text = "A CAVE" });
+  SPAWN(
+    World(),
+    ( Position, { .position = (Vector2) { 0, 0 } } ),
+    (    Text, { .text = "A CAVE" } )
+  );
 
   while(!WindowShouldClose()) {
     BeginDrawing();
