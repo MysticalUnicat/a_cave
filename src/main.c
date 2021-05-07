@@ -5,11 +5,11 @@
 
 #include "pp.h"
 
-#if 0
 #define _CAT1(x, y) x ## y
 #define _CAT0(x, y) _CAT1(x, y)
 #define CAT(x, y) _CAT0(x, y)
 
+#if 0
 #define EM_NONE(...)
 #define EM_ZERO(...) 0
 #define EM_ALL(...) __VA_ARGS__
@@ -103,7 +103,7 @@
     ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
   )
 
-#define GET_COMPONENT(X) CAT(X, _component)(),
+#define GET_COMPONENT(X) X ## _component (),
 
 #define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
   LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
@@ -150,7 +150,7 @@ DEFINE_COMPONENT(World(), Text, {
   const char * text;
 });
 
-//DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
+DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
 
 int main(int argc, char * argv []) {
   int screen_width = 800;
