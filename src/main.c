@@ -115,10 +115,10 @@ DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
 #define _QUERY_wext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
 #define _QUERY_wext_read(...)
 
-#define _QUERY_rext(...)               _QUERY_rext_ __VA_ARGS__               // unwrap
+#define _QUERY_rext(...)               _QUERY_rext_ __VA_ARGS__              // unwrap
 #define _QUERY_rext_(KIND, ...)        CAT(_QUERY_rext_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_rext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
-#define _QUERY_rext_read(...)
+#define _QUERY_rext_read(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
+#define _QUERY_rext_write(...)
 
 #define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
 #define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
