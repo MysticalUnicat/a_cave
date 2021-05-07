@@ -69,16 +69,19 @@
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
 #define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },
 
-#define SPAWN(WORLD, ...) do {                                                          \
-  alias_ecs_EntityHandle _entity;                                                       \
-  alias_ecs_EntitySpawnComponent _components[] = { MAP(SPAWN_COMPONENT, __VA_ARGS__) }; \
-  ECS(spawn, WORLD, &(alias_ecs_EntitySpawnInfo) {                                      \
-    .layer = ALIAS_ECS_INVALID_LAYER,                                                   \
-    .count = 1,                                                                         \
-    .num_components = sizeof(_components) / sizeof(_components[0]),                     \
-    .components = _components                                                           \
-  }, &_entity);                                                                         \
-} while(0)
+#define SPAWN(WORLD, ...) ({                                        \
+  alias_ecs_EntityHandle _entity;                                   \
+  alias_ecs_EntitySpawnComponent _components[] = {                  \
+    MAP(SPAWN_COMPONENT, __VA_ARGS__)                               \
+  };                                                                \
+  ECS(spawn, WORLD, &(alias_ecs_EntitySpawnInfo) {                  \
+    .layer = ALIAS_ECS_INVALID_LAYER,                               \
+    .count = 1,                                                     \
+    .num_components = sizeof(_components) / sizeof(_components[0]), \
+    .components = _components                                       \
+  }, &_entity);                                                     \
+  _entity;                                                          \
+})
 
 #define _QUERY_wlist(...)               _QUERY_wlist_ __VA_ARGS__               // unwrap
 #define _QUERY_wlist_(KIND, ...)        CAT(_QUERY_wlist_, KIND) (__VA_ARGS__) // add kind
