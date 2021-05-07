@@ -140,10 +140,29 @@ static inline void draw(void) {
   ClearBackground(BLACK);
 
   QUERY(World(), ( read, Position, position ), ( read, Text, text )) {
-    DrawTextEx(*text->font, text->text, position->pos, text->font->baseSize * text->size, 3, text->color);
+    printf("draw %p %p\n", position, text);
+    DrawTextEx(
+        *text->font
+      , text->text
+      , position->pos
+      , text->font->baseSize * text->size
+      , 3
+      , text->color
+    );
   }
 
   EndDrawing();
+}
+
+void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float seconds) {
+  const struct Position * pos;
+  ECS(read_entity_component, World(), entity, Position_component(), (const void **)&pos);
+  struct AnimatePosition ani;
+  ani.from = pos->pos;
+  ani.to = to;
+  ani.start = GetTime();
+  ani.end = ani.start + seconds;
+  ECS(add_component_to_entity, World(), entity, AnimatePosition_component(), &ani);
 }
 
 int main(int argc, char * argv []) {
@@ -159,6 +178,8 @@ int main(int argc, char * argv []) {
     ( Position, .pos = (Vector2) { .x = 0.0f, .y = 0.0f }  ),
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
   );
+
+  //animate_position_to(NULL, text, (Vector2) { 100.0f, 20.0f }, 5.0f);
 
   while(!WindowShouldClose()) {
     simulate();
