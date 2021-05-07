@@ -5,68 +5,6 @@
 
 #include "pp.h"
 
-#define _CAT1(x, y) x ## y
-#define _CAT0(x, y) _CAT1(x, y)
-#define CAT(x, y) _CAT0(x, y)
-
-#if 0
-#define EM_NONE(...)
-#define EM_ZERO(...) 0
-#define EM_ALL(...) __VA_ARGS__
-
-#define FIRST(X, ...) X
-#define SECOND(X, ...) FIRST(__VA_ARGS__)
-
-#define PROBE() ~, 1
-#define IS_PROBE(...) SECOND(__VA_ARGS__, 0)
-
-#define NOT(X) IS_PROBE(CAT(_NOT_, X))
-#define _NOT_0 PROBE()
-
-#define BOOL(X) NOT(NOT(X))
-
-#define IF_ELSE(X) _IF_ELSE(BOOL(X))
-#define _IF_ELSE(X) CAT(_IF_, X)
-#define _IF_1(...) __VA_ARGS__ EM_NONE
-#define _IF_0(...) EM_ALL
-
-#define EVAL(...) _EVAL_16(__VA_ARGS__)
-#define _EVAL_1024(...) _EVAL_512(_EVAL_512(__VA_ARGS__))
-#define _EVAL_512(...) _EVAL_256(_EVAL_256(__VA_ARGS__))
-#define _EVAL_256(...) _EVAL_128(_EVAL_128(__VA_ARGS__))
-#define _EVAL_128(...) _EVAL_64(_EVAL_64(__VA_ARGS__))
-#define _EVAL_64(...) _EVAL_32(_EVAL_32(__VA_ARGS__))
-#define _EVAL_32(...) _EVAL_16(_EVAL_16(__VA_ARGS__))
-#define _EVAL_16(...) _EVAL_8(_EVAL_8(__VA_ARGS__))
-#define _EVAL_8(...) _EVAL_4(_EVAL_4(__VA_ARGS__))
-#define _EVAL_4(...) _EVAL_2(_EVAL_2(__VA_ARGS__))
-#define _EVAL_2(...) _EVAL_1(_EVAL_1(__VA_ARGS__))
-#define _EVAL_1(...) __VA_ARGS__
-
-#define DEFER1(X) X EM_NONE()
-#define DEFER2(X) X EM_NONE EM_NONE()()
-#define DEFER3(X) X EM_NONE EM_NONE EM_NONE()()()
-#define DEFER4(X) X EM_NONE EM_NONE EM_NONE EM_NONE()()()
-
-#define HAS_ARGS(...) BOOL(FIRST(EM_ZERO __VA_ARGS__)())
-
-#define MAP(...) EVAL(_MAP(__VA_ARGS__))
-#define _MAP(F, X, ...)             \
-  F(X)                             \
-  IF_ELSE(HAS_ARGS(__VA_ARGS__))(  \
-    DEFER3(__MAP)()(F, __VA_ARGS__) \
-  )( /* nothing */ )
-#define __MAP _MAP
-
-#define MAPC(...) EVAL(_MAPC(__VA_ARGS__))
-#define _MAPC(F, X, ...)             \
-  F(X),                              \
-  IF_ELSE(HAS_ARGS(__VA_ARGS__))(    \
-    DEFER3(__MAPC)()(F, __VA_ARGS__) \
-  )( /* nothing */ )
-#define __MAPC _MAPC
-#endif
-
 #define LAZY_GLOBAL(TYPE, IDENT, ...) \
   TYPE IDENT (void) {                 \
     static TYPE inner;                \
@@ -152,6 +90,68 @@ DEFINE_COMPONENT(World(), Text, {
 
 DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
 
+#define _QUERY_wlist(...)               _QUERY_wlist_ __VA_ARGS__               // unwrap
+#define _QUERY_wlist_(KIND, ...)        CAT(_QUERY_wlist_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_wlist_write(TYPE, _NAME) TYPE##_component(),                    // if its write, emit getting the component for the type
+#define _QUERY_wlist_read(...)
+
+#define _QUERY_rlist(...)               _QUERY_rlist_ __VA_ARGS__               // unwrap
+#define _QUERY_rlist_(KIND, ...)        CAT(_QUERY_rlist_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_rlist_read(TYPE, _NAME)  TYPE##_component(),                    // if its read, emit getting the component for the type
+#define _QUERY_rlist_write(...)
+
+#define _QUERY_wparam(...)              _QUERY_wparam_ __VA_ARGS__              // unwrap
+#define _QUERY_wparam_(KIND, ...)       CAT(_QUERY_wparam_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_wparam_write(TYPE, NAME) , struct TYPE * NAME
+#define _QUERY_wparam_read(...)
+
+#define _QUERY_rparam(...)              _QUERY_rparam_ __VA_ARGS__              // unwrap
+#define _QUERY_rparam_(KIND, ...)       CAT(_QUERY_rparam_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_rparam_read(TYPE, NAME)  , struct TYPE * NAME
+#define _QUERY_rparam_write(...)
+
+#define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
+#define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_warg_write(TYPE, _NAME)  , (struct TYPE *)data[i++]
+#define _QUERY_warg_read(...)
+
+#define _QUERY_rarg(...)                _QUERY_rarg_ __VA_ARGS__               // unwrap
+#define _QUERY_rarg_(KIND, ...)         CAT(_QUERY_rarg_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_rarg_read(TYPE, _NAME)   , (struct TYPE *)data[i++]
+#define _QUERY_rarg_write(...)
+
+#define QUERY(WORLD, ...)                                                                                                        \
+  static alias_ecs_Query * CAT(query, __LINE__) = NULL;                                                                          \
+  if(CAT(query, __LINE__) == NULL) {                                                                                             \
+    alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) };                                                     \
+    alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) };                                                     \
+    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {                                                                 \
+      .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]),                                                                \
+      .write_components = _wlist,                                                                                                \
+      .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]),                                                                 \
+      .read_components = _rlist                                                                                                  \
+    }, &CAT(query, __LINE__));                                                                                                   \
+  }                                                                                                                              \
+  auto void CAT(query_fn_, __LINE__)                                                                                             \
+    ( void * ud                                                                                                                  \
+    , alias_ecs_Instance * instance                                                                                              \
+    , alias_ecs_EntityHandle entity                                                                                              \
+      MAP(_QUERY_wparam, __VA_ARGS__)                                                                                            \
+      MAP(_QUERY_rparam, __VA_ARGS__)                                                                                            \
+  );                                                                                                                             \
+  void CAT(query_fn0_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {   \
+    uint32_t i = 0;                                                                                                              \
+    CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));                  \
+  }                                                                                                                              \
+  alias_ecs_execute_query(WORLD, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
+  auto void CAT(query_fn_, __LINE__)                                                                                             \
+    ( void * ud                                                                                                                  \
+    , alias_ecs_Instance * instance                                                                                              \
+    , alias_ecs_EntityHandle entity                                                                                              \
+      MAP(_QUERY_wparam, __VA_ARGS__)                                                                                            \
+      MAP(_QUERY_rparam, __VA_ARGS__)                                                                                            \
+  )
+
 int main(int argc, char * argv []) {
   int screen_width = 800;
   int screen_height = 600;
@@ -171,10 +171,13 @@ int main(int argc, char * argv []) {
 
     ClearBackground(BLACK);
 
+    alias_ecs_ComponentHandle h = _pp_eval() 0;
+
     //DrawTextEx(*Romulus(), "A CAVE", (Vector2) { 0, 0 }, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
-    RUN_QUERY(World(), RenderableText()) {
-      const struct Position * position = (const struct Position *)data[0];
-      const struct Text * text = (const struct Text *)data[1];
+    QUERY(World(), ( read, Position, position ), ( read, Text, text )) {
+    //RUN_QUERY(World(), RenderableText()) {
+    //  const struct Position * position = (const struct Position *)data[0];
+    //  const struct Text * text = (const struct Text *)data[1];
       DrawTextEx(*Romulus(), text->text, position->position, Romulus()->baseSize * 2.0f, 3, DARKPURPLE);
 
       printf("tried to draw!\n");
