@@ -160,6 +160,9 @@ int main(int argc, char * argv []) {
 
   SetTargetFPS(60);
 
+  #define P(X) printf("%s", #X);
+  MAP(P, foo, bar, baz);
+
   //SPAWN(
   //  World(),
   //  ( Position, .position = (Vector2) { 0, 0 } ),
