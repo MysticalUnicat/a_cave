@@ -122,12 +122,12 @@ DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
 
 #define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
 #define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_warg_write(_TYPE, NAME)  NAME
+#define _QUERY_warg_write(_TYPE, NAME)  , NAME
 #define _QUERY_warg_read(...)
 
 #define _QUERY_rarg(...)                _QUERY_rarg_ __VA_ARGS__               // unwrap
 #define _QUERY_rarg_(KIND, ...)         CAT(_QUERY_rarg_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_rarg_read(_TYPE, NAME)   NAME
+#define _QUERY_rarg_read(_TYPE, NAME)   , NAME
 #define _QUERY_rarg_write(...)
 
 #define QUERY(WORLD, ...)                                                                                                        \
@@ -153,7 +153,7 @@ DEFINE_QUERY(World(), RenderableText, 0, Position, Text);
     uint32_t i = 0;                                                                                                              \
     MAP(_QUERY_wext, __VA_ARGS__) \
     MAP(_QUERY_rext, __VA_ARGS__) \
-    /*CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));*/                  \
+    CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));                  \
   }                                                                                                                              \
   alias_ecs_execute_query(WORLD, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
   auto void CAT(query_fn_, __LINE__)                                                                                             \
