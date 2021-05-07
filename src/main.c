@@ -1,5 +1,6 @@
 #include <alias/ecs.h>
 #include <raylib.h>
+#include <assert.h>
 
 #define _CAT1(x, y) x ## y
 #define _CAT0(x, y) _CAT1(x, y)
@@ -80,13 +81,19 @@
     return __ptr;                         \
   }
 
+#define ECS(F, ...) assert(ALIAS_ECS_SUCCESS == alias_ecs_##F(__VA_ARGS__))
+
 #define DEFINE_FONT(IDENT, PATH) LAZY_GLOBAL_PTR(Font, IDENT, inner = LoadFont(PATH);)
 
-#define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, alias_ecs_create_instance(NULL, &inner);)
+#define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, ECS(create_instance, NULL, &inner);)
 
-#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS) \
-  struct IDENT FIELDS; \
-  LAZY_GLOBAL(alias_ecs_ComponentHandle, IDENT##_component, alias_ecs_register_component(WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner);)
+#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS)                                                                 \
+  struct IDENT FIELDS;                                                                                         \
+  LAZY_GLOBAL(                                                                                                 \
+    alias_ecs_ComponentHandle,                                                                                 \
+    IDENT##_component,                                                                                         \
+    ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
+  )
 
 #define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
   LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
