@@ -43,6 +43,8 @@ static inline void simulate(void) {
     if(time > ani->end) {
       pos->pos = ani->to;
       CmdBuf_remove_component(&cbuf, entity, AnimatePosition_component());
+
+      printf("remove animation at %g > %g\n", time, ani->end);
       return;
     }
     
@@ -76,12 +78,23 @@ static inline void draw(void) {
 void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float seconds) {
   const struct Position * pos;
   ECS(read_entity_component, World(), entity, Position_component(), (const void **)&pos);
-  struct AnimatePosition ani;
+  
+  struct AnimatePosition ani, *a;
   ani.from = pos->pos;
   ani.to = to;
   ani.start = GetTime();
   ani.end = ani.start + seconds;
+
   ECS(add_component_to_entity, World(), entity, AnimatePosition_component(), &ani);
+
+  ECS(read_entity_component, World(), entity, AnimatePosition_component(), (const void **)&a);
+
+  assert(fabs(ani.from.x - a->from.x) < 0.001f);
+  assert(fabs(ani.from.y - a->from.y) < 0.001f);
+  assert(fabs(ani.to.x - a->to.x) < 0.001f);
+  assert(fabs(ani.to.y - a->to.y) < 0.001f);
+  assert(fabs(ani.start - a->start) < 0.001f);
+  assert(fabs(ani.end - a->end) < 0.001f);
 }
 
 int main(int argc, char * argv []) {
@@ -98,7 +111,7 @@ int main(int argc, char * argv []) {
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
   );
 
-  //animate_position_to(NULL, text, (Vector2) { 100.0f, 20.0f }, 5.0f);
+  animate_position_to(NULL, text, (Vector2) { 100.0f, 20.0f }, 5.0f);
 
   while(!WindowShouldClose()) {
     simulate();
