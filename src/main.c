@@ -98,6 +98,13 @@ void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float 
 
   ECS(read_entity_component, World(), entity, AnimatePosition_component(), (const void **)&a);
 
+  DEBUGf(a->from.x);
+  DEBUGf(a->from.y);
+  DEBUGf(a->to.x);
+  DEBUGf(a->to.y);
+  DEBUGf(a->start);
+  DEBUGf(a->end);
+
   assert(fabs(ani.from.x - a->from.x) < 0.001f);
   assert(fabs(ani.from.y - a->from.y) < 0.001f);
   assert(fabs(ani.to.x - a->to.x) < 0.001f);
@@ -116,7 +123,7 @@ int main(int argc, char * argv []) {
 
   Entity text = SPAWN(
     World(),
-    ( Position, .pos = (Vector2) { .x = 0.0f, .y = 0.0f }  ),
+    ( Position, .pos = (Vector2) { .x = 50.0f, .y = 10.0f }  ),
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
   );
 
