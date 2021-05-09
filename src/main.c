@@ -97,20 +97,6 @@ void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float 
   ECS(add_component_to_entity, World(), entity, AnimatePosition_component(), &ani);
 
   ECS(read_entity_component, World(), entity, AnimatePosition_component(), (const void **)&a);
-
-  DEBUGf(a->from.x);
-  DEBUGf(a->from.y);
-  DEBUGf(a->to.x);
-  DEBUGf(a->to.y);
-  DEBUGf(a->start);
-  DEBUGf(a->end);
-
-  assert(fabs(ani.from.x - a->from.x) < 0.001f);
-  assert(fabs(ani.from.y - a->from.y) < 0.001f);
-  assert(fabs(ani.to.x - a->to.x) < 0.001f);
-  assert(fabs(ani.to.y - a->to.y) < 0.001f);
-  assert(fabs(ani.start - a->start) < 0.001f);
-  assert(fabs(ani.end - a->end) < 0.001f);
 }
 
 int main(int argc, char * argv []) {
