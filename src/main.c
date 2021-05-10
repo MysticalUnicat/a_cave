@@ -43,8 +43,6 @@ static inline void simulate(void) {
     if(time > ani->end) {
       pos->pos = ani->to;
       CmdBuf_remove_component(&cbuf, entity, AnimatePosition_component());
-
-      printf("remove animation at %g > %g\n", time, ani->end);
       return;
     }
     
