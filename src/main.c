@@ -31,8 +31,6 @@ static inline float to_grid(float x) {
   return floor(x / (float)GRID_SIZE) * (float)GRID_SIZE;
 }
 
-#define DEBUGf(X) printf(#X " = %g\n", X)
-
 static inline void simulate(void) {
   static struct CmdBuf cbuf = { 0, 0, 0 };
   
@@ -41,13 +39,6 @@ static inline void simulate(void) {
   CmdBuf_begin_recording(&cbuf);
 
   QUERY(World(), ( write, Position, pos ), ( read, AnimatePosition, ani )) {
-    DEBUGf(ani->from.x);
-    DEBUGf(ani->from.y);
-    DEBUGf(ani->to.x);
-    DEBUGf(ani->to.y);
-    DEBUGf(ani->start);
-    DEBUGf(ani->end);
-    
     float t = (time - ani->start) / (ani->end - ani->end);
     if(time > ani->end) {
       pos->pos = ani->to;
@@ -95,8 +86,6 @@ void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float 
   ani.end = ani.start + seconds;
 
   ECS(add_component_to_entity, World(), entity, AnimatePosition_component(), &ani);
-
-  ECS(read_entity_component, World(), entity, AnimatePosition_component(), (const void **)&a);
 }
 
 int main(int argc, char * argv []) {
