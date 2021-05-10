@@ -102,7 +102,7 @@ int main(int argc, char * argv []) {
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
   );
 
-  animate_position_to(NULL, text, (Vector2) { 100.0f, 20.0f }, 5.0f);
+  animate_position_to(NULL, text, (Vector2) { 700.0f, 500.0f }, 5.0f);
 
   while(!WindowShouldClose()) {
     simulate();
