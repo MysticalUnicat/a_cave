@@ -39,7 +39,7 @@ static inline void simulate(void) {
   CmdBuf_begin_recording(&cbuf);
 
   QUERY(World(), ( write, Position, pos ), ( read, AnimatePosition, ani )) {
-    float t = (time - ani->start) / (ani->end - ani->end);
+    float t = (time - ani->start) / (ani->end - ani->start);
     if(time > ani->end) {
       pos->pos = ani->to;
       CmdBuf_remove_component(&cbuf, entity, AnimatePosition_component());
