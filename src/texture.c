@@ -45,6 +45,7 @@ TextureHandle get_texture_handle(const char * path) {
 }
 
 Texture2D get_texture(TextureHandle handle) {
+  _texcache.frame[handle] = FRAME;
   return _texcache.texture[handle];
 }
 
