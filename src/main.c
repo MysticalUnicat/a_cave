@@ -89,7 +89,7 @@ static inline void draw(alias_ecs_Instance * world) {
     , ( read, Sprite, sprite )
   ) {
     if(sprite->texture == 0) {
-      sprite->texture = get_texture_handle(sprite->path);
+      sprite->texture = get_texture_handle(sprite->path, false);
     }
 
   }
@@ -131,10 +131,10 @@ int main(int argc, char * argv []) {
   );
 
   while(!WindowShouldClose()) {
+    cleanup_textures();
+    
     simulate(World());
     draw(World());
-
-    FRAME++;
   }
 
   CloseWindow();
