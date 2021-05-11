@@ -21,13 +21,13 @@ void stat_print_per_frame(uint32_t index);
   do { \
     static uint32_t _stat_handle = 0; \
     _stat_handle = _stat_handle ? _stat_handle : stat_register(#NAME) + 1; \
-    stat_print(_stat_handle); \
+    stat_print(_stat_handle - 1); \
   } while(0)
 
 #define PRINT_STAT_PER_FRAME(NAME) \
   do { \
     static uint32_t _stat_handle = 0; \
     _stat_handle = _stat_handle ? _stat_handle : stat_register(#NAME) + 1; \
-    stat_print_per_frame(_stat_handle); \
+    stat_print_per_frame(_stat_handle - 1); \
   } while(0)
 
