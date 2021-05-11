@@ -1,12 +1,11 @@
 #include "util.h"
 
+#include "game.h"
 #include "texture.h"
 #include "stats.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-uint32_t FRAME = 0;
 
 DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
@@ -24,11 +23,8 @@ DEFINE_COMPONENT(World(), AnimatePosition, {
 })
 
 void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float seconds) {
-  const struct Position * pos;
-  ECS(read_entity_component, World(), entity, Position_component(), (const void **)&pos);
-  
   struct AnimatePosition ani, *a;
-  ani.from = pos->pos;
+  ani.from = Position_read(entity)->pos;
   ani.to = to;
   ani.start = GetTime();
   ani.end = ani.start + seconds;
@@ -82,12 +78,13 @@ static inline void simulate(alias_ecs_Instance * world) {
 
 static inline void draw(alias_ecs_Instance * world) {
   BeginDrawing();
+  BeginMode2D(game_state.camera);
 
   ClearBackground(BLACK);
 
   QUERY(world
     , ( read, Position, position )
-    , ( read, Sprite, sprite )
+    , ( write, Sprite, sprite )
   ) {
     if(sprite->texture == 0) {
       sprite->texture = get_texture_handle(sprite->path, false);
@@ -95,7 +92,7 @@ static inline void draw(alias_ecs_Instance * world) {
     
     DrawTextureEx(get_texture(sprite->texture), position->pos, 0.0f, sprite->size, sprite->tint);
 
-    STAT(texture draws);
+    STAT(texture draw);
   }
 
   QUERY(world, ( read, Position, position ), ( read, Text, text )) {
@@ -108,9 +105,10 @@ static inline void draw(alias_ecs_Instance * world) {
       , text->color
     );
 
-    STAT(text draws);
+    STAT(text draw);
   }
 
+  EndMode2D();
   EndDrawing();
 }
 
@@ -124,13 +122,13 @@ int main(int argc, char * argv []) {
 
   Entity text = SPAWN(
     World(),
-    ( Position, .pos = (Vector2) { .x = 50.0f, .y = 10.0f } ),
+    ( Position, .pos.x = 50.0f, .pos.y = 10.0f ),
     (     Text, .text = "A CAVE", .font = Romulus(), .size = 2.0f, .color = DARKPURPLE )
   );
 
   animate_position_to(NULL, text, (Vector2) { 700.0f, 500.0f }, 5.0f);
 
-  Entity player = SPAWN(
+  game_state.player = SPAWN(
     World(),
     ( Position, .pos = (Vector2) { .x = 0.0f, .y = 0.0f } ),
     (   Sprite, .path = "assets/characters/3SAMURAI-CHIBI/PNG-FILE/Samurai01/01-Idle/2D_SM01_Idle_000.png", .size = 32.0f, .tint = WHITE )
@@ -145,7 +143,8 @@ int main(int argc, char * argv []) {
     draw(World());
 
     stat_frame();
-    PRINT_STAT_PER_FRAME(texture draw);
+    //PRINT_STAT_PER_FRAME(texture draw);
+    //PRINT_STAT_PER_FRAME(text draw);
   }
 
   CloseWindow();

@@ -6,6 +6,7 @@
 typedef alias_ecs_EntityHandle Entity;
 
 struct GameState {
+  Camera2D camera;
   Entity player;
 };
 

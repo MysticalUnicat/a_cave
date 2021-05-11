@@ -11,6 +11,7 @@ add_executable(a_cave
   src/cbuf.c
   src/texture.c
   src/stats.c
+  src/game.c
 )
 
 target_link_libraries(a_cave alias raylib)

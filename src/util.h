@@ -45,7 +45,17 @@
     alias_ecs_ComponentHandle,                                                                                 \
     IDENT##_component,                                                                                         \
     ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
-  )
+  )                                                                                                            \
+  const struct IDENT * IDENT##_read(Entity entity) {                                                           \
+    const struct IDENT * ptr;                                                                                  \
+    ECS(read_entity_component, WORLD, entity, IDENT##_component(), (const void **)&ptr);                       \
+    return ptr;                                                                                                \
+  }                                                                                                            \
+  struct IDENT * IDENT##_write(Entity entity) {                                                                \
+    struct IDENT * ptr;                                                                                        \
+    ECS(write_entity_component, WORLD, entity, IDENT##_component(), (void **)&ptr);                            \
+    return ptr;                                                                                                \
+  }
 
 #define GET_COMPONENT(X) X ## _component (),
 
