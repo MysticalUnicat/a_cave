@@ -35,7 +35,6 @@ TextureHandle get_texture_handle(const char * path) {
   TextureCache_set_length(&_texcache, _texcache.length + 1);
 
   _texcache.path[index] = strdup(path);
-  _texcache.texture[index] = LoadTexture(path);
   _texcache.sort[index] = index;
   _texcache.frame[index] = FRAME;
 
@@ -45,10 +44,28 @@ TextureHandle get_texture_handle(const char * path) {
 }
 
 Texture2D get_texture(TextureHandle handle) {
+  if(_texcache.frame[handle] == 0) {
+    _texcache.texture[handle] = LoadTexture(_texcache.path[handle]);
+  }
   _texcache.frame[handle] = FRAME;
   return _texcache.texture[handle];
 }
 
 void cleanup_textures(void) {
-  // TODO
+  for(uint32_t i = 0; i < _texcache.length; i++) {
+    if(_texcache.frame[i] == 0) {
+      // skip unloaded textures
+      continue;
+    }
+
+    if(_texcache.frame[i] == 1) {
+      // skip persistant textures
+      continue;
+    }
+
+    if(FRAME - _texcache.frame[i] > FRAMES_TO_KEEP) {
+      _texcache.frame[i] = 0;
+      UnloadTexture(_texcache.texture[i]);
+    }
+  }
 }
