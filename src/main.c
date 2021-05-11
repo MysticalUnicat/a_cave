@@ -91,6 +91,9 @@ static inline void draw(alias_ecs_Instance * world) {
     if(sprite->texture == 0) {
       sprite->texture = get_texture_handle(sprite->path, false);
     }
+
+    Vector2Add(position->pos, sprite->offset);
+    
     DrawTextureEx(get_texture(sprite->texture), position->pos, 0.0f, sprite->size, sprite->tint);
   }
 
