@@ -91,7 +91,7 @@ static inline void draw(alias_ecs_Instance * world) {
     if(sprite->texture == 0) {
       sprite->texture = get_texture_handle(sprite->path, false);
     }
-
+    DrawTextureEx(get_texture(sprite->texture), position->pos, 0.0f, sprite->size, sprite->tint);
   }
 
   QUERY(world, ( read, Position, position ), ( read, Text, text )) {
