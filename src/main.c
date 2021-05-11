@@ -1,5 +1,7 @@
 #include "util.h"
 
+#include "texture.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,7 +37,7 @@ void animate_position_to(struct CmdBuf * cbuf, Entity entity, Vector2 to, float 
 
 DEFINE_COMPONENT(World(), Sprite, {
   const char * path;
-  Texture2D * texture;
+  TextureHandle texture;
   Vector2 offset;
   float size;
   Color tint;
@@ -86,6 +88,10 @@ static inline void draw(alias_ecs_Instance * world) {
     , ( read, Position, position )
     , ( read, Sprite, sprite )
   ) {
+    if(sprite->texture == 0) {
+      sprite->texture = get_texture_handle(sprite->path);
+    }
+
   }
 
   QUERY(world, ( read, Position, position ), ( read, Text, text )) {
