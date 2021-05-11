@@ -130,10 +130,11 @@ int main(int argc, char * argv []) {
   animate_position_to(NULL, text, (Vector2) { 700.0f, 500.0f }, 5.0f);
 
   memset(&game_state, 0, sizeof(game_state));
+  game_state.camera.zoom = 1.0f;
 
   game_state.player = SPAWN(
     World(),
-    ( Position, .pos = (Vector2) { .x = 0.0f, .y = 0.0f } ),
+    ( Position, .pos.x = 0.0f, .pos.y = 0.0f ),
     (   Sprite, .path = "assets/characters/3SAMURAI-CHIBI/PNG-FILE/Samurai01/01-Idle/2D_SM01_Idle_000.png", .size = 32.0f, .tint = WHITE )
   );
 
