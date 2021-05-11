@@ -53,8 +53,11 @@ void stat_submit(uint32_t index, uint32_t count) {
 
 void stat_print(uint32_t index) {
   DrawText(TMP_STR(64, "%s : %u", _stats.name[index], _stats.total[index]), _top, 0, 8, RAYWHITE);
+  _top += 8;
 }
 
 void stat_print_per_frame(uint32_t index) {
+  DrawText(TMP_STR(64, "%s : %u", _stats.name[index], _stats.accum[index]), _top, 0, 8, RAYWHITE);
+  _top += 8;
 }
 
