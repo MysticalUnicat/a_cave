@@ -1,5 +1,8 @@
 #include "util.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 struct Cmd * _CmdBuf_allocate(struct CmdBuf * cbuf, size_t size) {
   if(cbuf->pointer + size > cbuf->end) {
     size_t new_capacity = (size + (cbuf->end - cbuf->start));

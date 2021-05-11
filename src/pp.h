@@ -46,4 +46,7 @@
     soa->length = length; \
   }
 
+
+#define TMP_STR(SIZE, FORMAT, ...) ({ char _buffer[SIZE]; snprintf(_buffer, SIZE, FORMAT, ## __VA_ARGS__); _buffer; })
+
 #endif // _PP_H_

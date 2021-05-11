@@ -94,6 +94,8 @@ static inline void draw(alias_ecs_Instance * world) {
     }
     
     DrawTextureEx(get_texture(sprite->texture), position->pos, 0.0f, sprite->size, sprite->tint);
+
+    STAT(texture draws);
   }
 
   QUERY(world, ( read, Position, position ), ( read, Text, text )) {
@@ -105,6 +107,8 @@ static inline void draw(alias_ecs_Instance * world) {
       , 3
       , text->color
     );
+
+    STAT(text draws);
   }
 
   EndDrawing();
@@ -133,10 +137,15 @@ int main(int argc, char * argv []) {
   );
 
   while(!WindowShouldClose()) {
+    // the order does not matter? *shrug*
     cleanup_textures();
-    
+
     simulate(World());
+
     draw(World());
+
+    stat_frame();
+    PRINT_STAT_PER_FRAME(texture draw);
   }
 
   CloseWindow();
