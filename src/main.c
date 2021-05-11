@@ -95,6 +95,8 @@ static inline void draw(alias_ecs_Instance * world) {
     STAT(texture draw);
   }
 
+  EndMode2D();
+
   QUERY(world, ( read, Position, position ), ( read, Text, text )) {
     DrawTextEx(
         *text->font
@@ -108,7 +110,6 @@ static inline void draw(alias_ecs_Instance * world) {
     STAT(text draw);
   }
 
-  EndMode2D();
   EndDrawing();
 }
 
