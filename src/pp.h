@@ -26,4 +26,24 @@
 
 #define MAP(F, ...) _pp_eval(_pp_map_1(F, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
+#define _pp_soa_member(...) _pp_soa_member_ __VA_ARGS__
+#define _pp_soa_member_(TYPE, NAME) TYPE * NAME;
+#define _pp_soa_realloc(...) _pp_soa_realloc_ __VA_ARGS__
+#define _pp_soa_realloc_(TYPE, NAME) soa->NAME = realloc(soa->NAME, new_capacity * sizeof(*soa->NAME));
+#define SOA(NAME, ...) \
+  struct NAME { \
+    uint32_t length; \
+    uint32_t capacity; \
+    MAP(_pp_soa_member, __VA_ARGS__) \
+  }; \
+  void NAME##_set_length(struct NAME * soa, uint32_t length) { \
+    if(length >= soa->capacity) { \
+      uint32_t new_capacity = (length + 1); \
+      new_capacity += new_capacity >> 1; \
+      MAP(_pp_soa_realloc, __VA_ARGS__) \
+      soa->capacity = new_capacity; \
+    } \
+    soa->length = length; \
+  }
+
 #endif // _PP_H_

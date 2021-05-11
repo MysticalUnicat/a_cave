@@ -70,7 +70,6 @@
 
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
 #define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },
-
 #define SPAWN(WORLD, ...) ({                                        \
   alias_ecs_EntityHandle _entity;                                   \
   alias_ecs_EntitySpawnComponent _components[] = {                  \
@@ -87,18 +86,18 @@
 
 #define _QUERY_wlist(...)               _QUERY_wlist_ __VA_ARGS__               // unwrap
 #define _QUERY_wlist_(KIND, ...)        CAT(_QUERY_wlist_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_wlist_write(TYPE, _NAME) TYPE##_component(),                    // if its write, emit getting the component for the type
 #define _QUERY_wlist_read(...)
+#define _QUERY_wlist_write(TYPE, _NAME) TYPE##_component(),
 
 #define _QUERY_rlist(...)               _QUERY_rlist_ __VA_ARGS__               // unwrap
 #define _QUERY_rlist_(KIND, ...)        CAT(_QUERY_rlist_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_rlist_read(TYPE, _NAME)  TYPE##_component(),                    // if its read, emit getting the component for the type
+#define _QUERY_rlist_read(TYPE, _NAME)  TYPE##_component(),
 #define _QUERY_rlist_write(...)
 
 #define _QUERY_wparam(...)              _QUERY_wparam_ __VA_ARGS__              // unwrap
 #define _QUERY_wparam_(KIND, ...)       CAT(_QUERY_wparam_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_wparam_write(TYPE, NAME) , struct TYPE * NAME
 #define _QUERY_wparam_read(...)
+#define _QUERY_wparam_write(TYPE, NAME) , struct TYPE * NAME
 
 #define _QUERY_rparam(...)              _QUERY_rparam_ __VA_ARGS__              // unwrap
 #define _QUERY_rparam_(KIND, ...)       CAT(_QUERY_rparam_, KIND) (__VA_ARGS__) // add kind
@@ -107,8 +106,8 @@
 
 #define _QUERY_wext(...)               _QUERY_wext_ __VA_ARGS__               // unwrap
 #define _QUERY_wext_(KIND, ...)        CAT(_QUERY_wext_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_wext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
 #define _QUERY_wext_read(...)
+#define _QUERY_wext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
 
 #define _QUERY_rext(...)               _QUERY_rext_ __VA_ARGS__              // unwrap
 #define _QUERY_rext_(KIND, ...)        CAT(_QUERY_rext_, KIND) (__VA_ARGS__) // add kind
@@ -117,8 +116,8 @@
 
 #define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
 #define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
-#define _QUERY_warg_write(_TYPE, NAME)  , NAME
 #define _QUERY_warg_read(...)
+#define _QUERY_warg_write(_TYPE, NAME)  , NAME
 
 #define _QUERY_rarg(...)                _QUERY_rarg_ __VA_ARGS__               // unwrap
 #define _QUERY_rarg_(KIND, ...)         CAT(_QUERY_rarg_, KIND) (__VA_ARGS__) // add kind
