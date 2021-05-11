@@ -45,6 +45,8 @@ uint32_t stat_register(const char * name) {
   _stats.sort[index] = index;
 
   qsort(_stats.sort, _stats.length, sizeof(*_stats.sort), (int (*)(const void *, const void *))_stats_sort);
+
+  return index;
 }
 
 void stat_submit(uint32_t index, uint32_t count) {
