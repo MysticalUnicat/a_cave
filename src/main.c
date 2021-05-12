@@ -106,7 +106,7 @@ static void _playing_begin(void * ud) {
   // top wall
   SPAWN(
       ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = WALL_SIZE / 2.0f )
-    , ( DrawRectangle, .width = SCREEN_HEIGHT, .height = WALL_SIZE, .color = DARKGRAY )
+    , ( DrawRectangle, .width = SCREEN_WIDTH, .height = WALL_SIZE, .color = DARKGRAY )
     );
 
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
