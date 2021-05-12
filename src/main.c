@@ -40,6 +40,7 @@ int main(void) {
 
   ECS(create_instance, NULL, &g_world);
 
+  begin_playing();
 
   SetTargetFPS(60);
 
