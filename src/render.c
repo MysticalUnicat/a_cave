@@ -10,7 +10,7 @@ void render_init(void) {
 void render_frame(void) {
   BeginDrawing();
 
-  ClearBackground(BLACK);
+  ClearBackground(RAYWHITE);
 
   QUERY(
       ( read, Transform2D, t )
