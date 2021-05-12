@@ -42,7 +42,7 @@ void state_playing_begin(void) {
     for(uint32_t j = 0; j < BRICKS_PER_LINE; j++) {
       SPAWN(
           ( Transform2D, .x = j * brick_width + brick_width / 2.0f, .y = i * brick_height + initial_down_position )
-        , ( DrawRectangle, .width = brick_width, .height = brick_height )
+        , ( DrawRectangle, .width = brick_width, .height = brick_height, .color = (i + j) % 2 ? GRAY : DARKGRAY )
         );
     }
   }
