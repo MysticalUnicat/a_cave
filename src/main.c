@@ -120,7 +120,7 @@ static void _playing_begin(void * ud) {
 
   // right wall
   SPAWN(
-      ( Transform2D, .x = WALL_SIZE / 2.0f, .y = SCREEN_HEIGHT / 2.0f )
+      ( Transform2D, .x = SCREEN_WIDTH - (WALL_SIZE / 2.0f), .y = SCREEN_HEIGHT / 2.0f )
     , ( DrawRectangle, .width = WALL_SIZE, .height = SCREEN_HEIGHT, .color = DARKGRAY )
     );
 
