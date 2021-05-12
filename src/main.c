@@ -96,7 +96,7 @@ static void _playing_begin(void * ud) {
                  );
 
   float brick_width = (float)SCREEN_WIDTH / (BRICKS_PER_LINE + 1);
-  float brick_height = 40;
+  float brick_height = 20;
   float initial_down_position = 50;
 
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
@@ -116,7 +116,7 @@ static void _playing_frame(void * ud) {
   if(IsKeyPressed('P')) {
     state_push(&paused);
   }
-  
+
   //physics_frame();
 }
 
