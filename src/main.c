@@ -21,17 +21,25 @@ Entity _paddle;
 Entity _held_ball;
 int _life;
 
-enum { PLAYING, PAUSED, GAME_OVER } state;
+enum { NO_STATE, PLAYING, PAUSED, GAME_OVER } state;
+
+void begin_playing(void) {
+  _paddle = SPAWN(
+                ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
+              , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
+              );
+
+  _held_ball = SPAWN(
+                   ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 30.0f )
+                 , ( DrawCircle, .radius = 7, .color = MAROON )
+                 );
+}
 
 int main(void) {
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "sample game: arkanoid");
 
   ECS(create_instance, NULL, &g_world);
 
-  _paddle = SPAWN(
-                ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
-              , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
-              );
 
   SetTargetFPS(60);
 
