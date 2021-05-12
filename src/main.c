@@ -23,7 +23,7 @@ int _life;
 
 enum { NO_STATE, PLAYING, PAUSED, GAME_OVER } state;
 
-void begin_playing(void) {
+void state_playing_begin(void) {
   _paddle = SPAWN(
                 ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
               , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
@@ -33,6 +33,19 @@ void begin_playing(void) {
                    ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 30.0f )
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  );
+
+  float brick_width = (float)SCREEN_WIDTH / BRICKS_PER_LINE;
+  float brick_height = 40;
+  float initial_down_position = 50;
+
+  for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
+    for(uint32_t j = 0; j < BRICKS_PER_LINE; j++) {
+      SPAWN(
+          ( Transform2D, .x = j * brick_width + brick_width / 2.0f, .y = i * brick_height + initial_down_position )
+        , ( DrawRectangle, .width = brick_width, .height = brick_height )
+        );
+    }
+  }
 }
 
 int main(void) {
@@ -40,7 +53,7 @@ int main(void) {
 
   ECS(create_instance, NULL, &g_world);
 
-  begin_playing();
+  state_playing_begin();
 
   SetTargetFPS(60);
 
