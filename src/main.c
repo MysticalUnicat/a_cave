@@ -21,9 +21,70 @@ Entity _paddle;
 Entity _held_ball;
 int _life;
 
-enum { NO_STATE, PLAYING, PAUSED, GAME_OVER } state;
+struct State {
+  struct State * prev;
+  void * ud;
+  void (*begin)(void * ud);
+  void (*frame)(void * ud);
+  void (*background)(void * ud);
+  void (*pause)(void * ud);
+  void (*unpause)(void * ud);
+  void (*end)(void * ud);
+} * state_current = NULL;
 
-void state_playing_begin(void) {
+void state_push(struct State * state) {
+  if(state_current != NULL && state_current->pause != NULL) {
+    state_current->pause(state_current->ud);
+  }
+  state->prev = state_current;
+  state_current = state;
+  if(state->begin != NULL) {
+    state->begin(state->ud);
+  }
+}
+
+void state_pop(void) {
+  if(state_current == NULL) {
+    return;
+  }
+  if(state_current->end != NULL) {
+    state_current->end(state_current->ud);
+  }
+  state_current = state_current->prev;
+  if(state_current->unpause != NULL) {
+    state_current->unpause(state_current->ud);
+  }
+}
+
+void state_frame(void) {
+  struct State * current = state_current;
+  if(current->frame != NULL) {
+    current->frame(current->ud);
+  }
+  while(current != NULL) {
+    if(current->background != NULL) {
+      current->background(current->ud);
+    }
+    current = current->prev;
+  }
+}
+
+// =============================================================================================================================================================
+static void _paused_frame(void * ud) {
+  extern struct State playing;
+
+  if(IsKeyPressed('P')) {
+    state_pop();
+    return;
+  }
+}
+
+struct State paused = {
+  .frame = _paused_frame
+};
+
+// =============================================================================================================================================================
+static void _playing_begin(void * ud) {
   _paddle = SPAWN(
                 ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
               , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
@@ -34,7 +95,7 @@ void state_playing_begin(void) {
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  );
 
-  float brick_width = (float)SCREEN_WIDTH / BRICKS_PER_LINE;
+  float brick_width = (float)SCREEN_WIDTH / (BRICKS_PER_LINE + 1);
   float brick_height = 40;
   float initial_down_position = 50;
 
@@ -48,16 +109,34 @@ void state_playing_begin(void) {
   }
 }
 
+static void _playing_frame(void * ud) {
+  extern struct State paused;
+  //float delta = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
+
+  if(IsKeyPressed('P')) {
+    state_push(&paused);
+  }
+  
+  //physics_frame();
+}
+
+struct State playing = {
+  .begin = _playing_begin,
+  .frame = _playing_frame
+};
+
+// =============================================================================================================================================================
 int main(void) {
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "sample game: arkanoid");
 
   ECS(create_instance, NULL, &g_world);
 
-  state_playing_begin();
+  state_push(&playing);
 
   SetTargetFPS(60);
 
   while(!WindowShouldClose()) {
+    state_frame();
     render_frame();
   }
 }
