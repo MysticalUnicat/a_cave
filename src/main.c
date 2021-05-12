@@ -16,6 +16,7 @@ alias_ecs_Instance * g_world;
 
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
+#define WALL_SIZE      20
 
 Entity _paddle;
 Entity _held_ball;
@@ -95,9 +96,18 @@ static void _playing_begin(void * ud) {
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  );
 
+  int game_space_width = SCREEN_WIDTH - WALL_SIZE * 2;
+  int game_space_height = SCREEN_HEIGHT - WALL_SIZE;
+
   float brick_width = (float)SCREEN_WIDTH / (BRICKS_PER_LINE + 1);
   float brick_height = 20;
   float initial_down_position = 50;
+
+  // top wall
+  SPAWN(
+      ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = WALL_SIZE / 2.0f )
+    , ( DrawRectangle, .width = SCREEN_HEIGHT, .height = WALL_SIZE, .color = DARKGRAY )
+    );
 
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
     for(uint32_t j = 0; j < BRICKS_PER_LINE; j++) {
