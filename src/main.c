@@ -96,12 +96,15 @@ static void _playing_begin(void * ud) {
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  );
 
-  int game_space_width = SCREEN_WIDTH - WALL_SIZE * 2;
-  int game_space_height = SCREEN_HEIGHT - WALL_SIZE;
+  int game_space_l = WALL_SIZE;
+  int game_space_r = SCREEN_WIDTH - WALL_SIZE;
+  int game_space_t = WALL_SIZE;
+  int game_space_b = SCREEN_HEIGHT;
+  int game_space_width = game_space_r - game_space_l;
+  int game_space_height = game_space_b - game_space_t;
 
-  float brick_width = (float)SCREEN_WIDTH / (BRICKS_PER_LINE + 1);
-  float brick_height = 20;
-  float initial_down_position = 50;
+  int brick_width = game_space_width / BRICKS_PER_LINE;
+  int brick_height = 20;
 
   // top wall
   SPAWN(
@@ -109,10 +112,22 @@ static void _playing_begin(void * ud) {
     , ( DrawRectangle, .width = SCREEN_WIDTH, .height = WALL_SIZE, .color = DARKGRAY )
     );
 
+  // left wall
+  SPAWN(
+      ( Transform2D, .x = WALL_SIZE / 2.0f, .y = SCREEN_HEIGHT / 2.0f )
+    , ( DrawRectangle, .width = WALL_SIZE, .height = SCREEN_HEIGHT, .color = DARKGRAY )
+    );
+
+  // right wall
+  SPAWN(
+      ( Transform2D, .x = WALL_SIZE / 2.0f, .y = SCREEN_HEIGHT / 2.0f )
+    , ( DrawRectangle, .width = WALL_SIZE, .height = SCREEN_HEIGHT, .color = DARKGRAY )
+    );
+
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
     for(uint32_t j = 0; j < BRICKS_PER_LINE; j++) {
       SPAWN(
-          ( Transform2D, .x = j * brick_width + brick_width / 2.0f, .y = i * brick_height + initial_down_position )
+          ( Transform2D, .x = j * brick_width + brick_width / 2.0f + game_space_l, .y = i * brick_height + game_space_t)
         , ( DrawRectangle, .width = brick_width, .height = brick_height, .color = (i + j) % 2 ? GRAY : DARKGRAY )
         );
     }
