@@ -127,7 +127,7 @@ static void _playing_begin(void * ud) {
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
     for(uint32_t j = 0; j < BRICKS_PER_LINE; j++) {
       SPAWN(
-          ( Transform2D, .x = j * brick_width + brick_width / 2.0f + game_space_l, .y = i * brick_height + game_space_t)
+          ( Transform2D, .x = j * brick_width + brick_width / 2.0f + game_space_l, .y = (i + 1) * brick_height + game_space_t )
         , ( DrawRectangle, .width = brick_width, .height = brick_height, .color = (i + j) % 2 ? GRAY : DARKGRAY )
         );
     }
