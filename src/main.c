@@ -78,6 +78,8 @@ static void _paused_frame(void * ud) {
     state_pop();
     return;
   }
+
+  DrawText("GAME PAUSED", SCREEN_WIDTH / 2 - MeasureText("GAME PAUSED", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
 }
 
 struct State paused = {
