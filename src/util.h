@@ -11,11 +11,14 @@
 
 #define Entity alias_ecs_EntityHandle
 
+extern alias_ecs_Instance * g_world;
+
 #define LAZY_GLOBAL(TYPE, IDENT, ...) \
   TYPE IDENT (void) {                 \
     static TYPE inner;                \
     static int init = 0;              \
     if(init == 0) {                   \
+      printf("making "#IDENT" ...\n");\
       __VA_ARGS__                     \
       init = 1;                       \
     }                                 \
@@ -27,6 +30,7 @@
     static TYPE inner;                    \
     static TYPE * __ptr = NULL;           \
     if(__ptr == NULL) {                   \
+      printf("making "#IDENT" ...\n");    \
       __VA_ARGS__                         \
       __ptr = &inner;                     \
     }                                     \
@@ -37,55 +41,47 @@
 
 #define DEFINE_FONT(IDENT, PATH) LAZY_GLOBAL_PTR(Font, IDENT, inner = LoadFont(PATH);)
 
-#define DEFINE_WORLD(IDENT) LAZY_GLOBAL(alias_ecs_Instance *, IDENT, ECS(create_instance, NULL, &inner);)
+#define DECLARE_COMPONENT(IDENT, ...)                \
+  struct IDENT __VA_ARGS__;                          \
+  alias_ecs_ComponentHandle IDENT##_component(void); \
+  const struct IDENT * IDENT##_read(Entity entity);  \
+  struct IDENT * IDENT##_write(Entity entity);
 
-#define DEFINE_COMPONENT(WORLD, IDENT, FIELDS)                                                                 \
-  struct IDENT FIELDS;                                                                                         \
+#define DEFINE_COMPONENT(IDENT)                                                                         \
   LAZY_GLOBAL(                                                                                                 \
     alias_ecs_ComponentHandle,                                                                                 \
     IDENT##_component,                                                                                         \
-    ECS(register_component, WORLD, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
+    ECS(register_component, g_world, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
   )                                                                                                            \
   const struct IDENT * IDENT##_read(Entity entity) {                                                           \
     const struct IDENT * ptr;                                                                                  \
-    ECS(read_entity_component, WORLD, entity, IDENT##_component(), (const void **)&ptr);                       \
+    ECS(read_entity_component, g_world, entity, IDENT##_component(), (const void **)&ptr);                       \
     return ptr;                                                                                                \
   }                                                                                                            \
   struct IDENT * IDENT##_write(Entity entity) {                                                                \
     struct IDENT * ptr;                                                                                        \
-    ECS(write_entity_component, WORLD, entity, IDENT##_component(), (void **)&ptr);                            \
+    ECS(write_entity_component, g_world, entity, IDENT##_component(), (void **)&ptr);                            \
     return ptr;                                                                                                \
   }
 
-#define GET_COMPONENT(X) X ## _component (),
+#define DECLARE_TAG_COMPONENT(IDENT) \
+  alias_ecs_ComponentHandle IDENT##_component(void);
 
-#define DEFINE_QUERY(WORLD, NAME, W_COUNT, ...)                   \
-  LAZY_GLOBAL(alias_ecs_Query *, NAME,                            \
-    alias_ecs_ComponentHandle handles[] = {                       \
-      MAP(GET_COMPONENT, __VA_ARGS__)                            \
-    };                                                            \
-    uint32_t handle_count = sizeof(handles) / sizeof(handles[0]); \
-    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {  \
-      .num_write_components = W_COUNT,                            \
-      .write_components = handles,                                \
-      .num_read_components = handle_count - W_COUNT,              \
-      .read_components = handles + W_COUNT,                       \
-    }, &inner);                                                   \
+#define DEFINE_TAG_COMPONENT(IDENT)                                                  \
+  LAZY_GLOBAL(                                                                              \
+    alias_ecs_ComponentHandle,                                                              \
+    IDENT##_component,                                                                      \
+    ECS(register_component, g_world, &(alias_ecs_ComponentCreateInfo) { .size = 0 }, &inner); \
   )
-
-#define RUN_QUERY(WORLD, QUERY) \
-  auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data); \
-  alias_ecs_execute_query(WORLD, QUERY, (alias_ecs_QueryCB) { CAT(query_fn_, __LINE__), NULL }); \
-  auto void CAT(query_fn_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data)
 
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
 #define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },
-#define SPAWN(WORLD, ...) ({                                        \
+#define SPAWN(...) ({                                               \
   alias_ecs_EntityHandle _entity;                                   \
   alias_ecs_EntitySpawnComponent _components[] = {                  \
     MAP(SPAWN_COMPONENT, __VA_ARGS__)                               \
   };                                                                \
-  ECS(spawn, WORLD, &(alias_ecs_EntitySpawnInfo) {                  \
+  ECS(spawn, g_world, &(alias_ecs_EntitySpawnInfo) {                  \
     .layer = ALIAS_ECS_INVALID_LAYER,                               \
     .count = 1,                                                     \
     .num_components = sizeof(_components) / sizeof(_components[0]), \
@@ -134,12 +130,12 @@
 #define _QUERY_rarg_read(_TYPE, NAME)   , NAME
 #define _QUERY_rarg_write(...)
 
-#define QUERY(WORLD, ...)                                                                                                        \
+#define QUERY(...)                                                                                                               \
   static alias_ecs_Query * CAT(query, __LINE__) = NULL;                                                                          \
   if(CAT(query, __LINE__) == NULL) {                                                                                             \
     alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) };                                                     \
     alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) };                                                     \
-    alias_ecs_create_query(WORLD, &(alias_ecs_QueryCreateInfo) {                                                                 \
+    alias_ecs_create_query(g_world, &(alias_ecs_QueryCreateInfo) {                                                                 \
       .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]),                                                                \
       .write_components = _wlist,                                                                                                \
       .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]),                                                                 \
@@ -159,7 +155,7 @@
     MAP(_QUERY_rext, __VA_ARGS__) \
     CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));                  \
   }                                                                                                                              \
-  alias_ecs_execute_query(WORLD, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
+  alias_ecs_execute_query(g_world, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
   auto void CAT(query_fn_, __LINE__)                                                                                             \
     ( void * ud                                                                                                                  \
     , alias_ecs_Instance * instance                                                                                              \

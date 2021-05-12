@@ -1,5 +1,45 @@
+#define ARKANOID 1
+
 #include "util.h"
 
+#include "transform.h"
+#include "physics.h"
+#include "render.h"
+
+alias_ecs_Instance * g_world;
+
+#if ARKANOID
+
+#define MAX_PLAYER_LIFE  5
+#define LINES_OF_BRICKS  5
+#define BRICKS_PER_LINE 20
+
+#define SCREEN_WIDTH  800
+#define SCREEN_HEIGHT 600
+
+Entity _paddle;
+Entity _held_ball;
+int _life;
+
+enum { PLAYING, PAUSED, GAME_OVER } state;
+
+int main(void) {
+  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "sample game: arkanoid");
+
+  ECS(create_instance, NULL, &g_world);
+
+  _paddle = SPAWN(
+                ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
+              , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
+              );
+
+  SetTargetFPS(60);
+
+  while(!WindowShouldClose()) {
+    render_frame();
+  }
+}
+#else
 #include "game.h"
 #include "texture.h"
 #include "stats.h"
@@ -7,7 +47,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
+//DEFINE_FONT(Romulus, "resources/fonts/romulus.png")
 
 DEFINE_WORLD(World)
 
@@ -155,3 +195,4 @@ int main(int argc, char * argv []) {
   
   return 0;
 }
+#endif
