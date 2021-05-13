@@ -156,7 +156,7 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -500 ));
+  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -5 ));
   Constraint2D_write(g.pin_constraint)->inactive = true;
 
   g.hold_ball = 0;
@@ -226,7 +226,7 @@ static void _playing_begin(void * ud) {
   // -
 
   cpSpaceSetGravity(physics_space(), cpv(0.0f, 0.0f));
-  cpSpaceSetDamping(physics_space(), 0.0f);
+  cpSpaceSetDamping(physics_space(), 1.0f);
 
   _hold_ball(ball);
 }
@@ -243,7 +243,7 @@ static void _playing_frame(void * ud) {
     _release_ball();
   }
 
-  Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
+  Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
 }
 
 struct State playing = {
