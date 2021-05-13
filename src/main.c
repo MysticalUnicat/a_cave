@@ -121,7 +121,7 @@ void _teleport_ball_to_paddle(Entity ball) {
 
 void _hold_ball(Entity ball) {
   g.hold_ball = ball;
-  g.hold_constraint = SPAWN(( Constraint2D, .body_a = g.paddle, .body_b = g.hold_ball ));
+  g.hold_constraint = SPAWN(( Constraint2D, .kind = Constraint2D_rotary, .body_a = g.paddle, .body_b = g.hold_ball ));
 }
 
 void _release_ball(void) {
