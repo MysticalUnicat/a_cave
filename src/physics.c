@@ -165,20 +165,29 @@ struct ApplyImpulseData {
   cpVect i;
   cpVect p;
 };
-
 void _apply_impulse(cpSpace * space, void * key, void * _data) {
   struct ApplyImpulseData * data = (struct ApplyImpulseData *)_data;
   cpBodyApplyImpulseAtLocalPoint((cpBody *)key, data->i, data->p);
+}
+void _apply_impulse_free(cpSpace * space, void * key, void * _data) {
+  _apply_impulse(space, key, _data);
   free(_data);
 }
 
 void physics_apply_impulse(Entity e, cpVect i, cpVect p) {
   struct Body2D * b = Body2D_write(e);
   if(b->body != NULL) {
-    struct ApplyImpulseData * data = malloc(sizeof(*data));
-    data->i = i;
-    data->p = p;
-    cpSpaceAddPostStepCallback(physics_space(), _apply_impulse, b->body, data);
+    if(cpSpaceIsLocked(physics_space())) {
+      struct ApplyImpulseData * data = malloc(sizeof(*data));
+      data->i = i;
+      data->p = p;
+      cpSpaceAddPostStepCallback(physics_space(), _apply_impulse_free, b->body, data);
+    } else {
+      struct ApplyImpulseData data;
+      data.i = i;
+      data.p = p;
+      _apply_impulse(physics_space(), b->body, &data);
+    }
   }
 }
 
