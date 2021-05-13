@@ -130,7 +130,7 @@ extern alias_ecs_Instance * g_world;
 #define _QUERY_rarg_read(_TYPE, NAME)   , NAME
 #define _QUERY_rarg_write(...)
 
-#define QUERY(...)                                                                                                               \
+#define _QUERY(INJECT, ...)                                                                                                               \
   static alias_ecs_Query * CAT(query, __LINE__) = NULL;                                                                          \
   if(CAT(query, __LINE__) == NULL) {                                                                                             \
     alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) };                                                     \
@@ -153,6 +153,7 @@ extern alias_ecs_Instance * g_world;
     uint32_t i = 0;                                                                                                              \
     MAP(_QUERY_wext, __VA_ARGS__) \
     MAP(_QUERY_rext, __VA_ARGS__) \
+    INJECT \
     CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__));                  \
   }                                                                                                                              \
   alias_ecs_execute_query(g_world, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL });                 \
@@ -163,6 +164,8 @@ extern alias_ecs_Instance * g_world;
       MAP(_QUERY_wparam, __VA_ARGS__)                                                                                            \
       MAP(_QUERY_rparam, __VA_ARGS__)                                                                                            \
   )
+
+#define QUERY(...) _QUERY(, __VA_ARGS__)
 
 struct Cmd {
   uint32_t size;
