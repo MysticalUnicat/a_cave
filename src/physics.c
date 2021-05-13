@@ -60,6 +60,24 @@ static void _create_new_bodies(void) {
   }
 }
 
+static void _prepare_kinematic(void) {
+  QUERY(
+      ( write, Velocity2D, v )
+    , ( write, Body2D, b )
+  ) {
+    if(b->body == NULL || b->kind != Body2D_kinematic) {
+      return;
+    }
+
+    cpBodySetVelocity(b->body, cpv(v->x, v->y));
+    cpBodySetAngularVelocity(b->body, v->a);
+
+    v->x = 0.0f;
+    v->y = 0.0f;
+    v->a = 0.0f;
+  }
+}
+
 static void _iterate(void) {
   static float accum = 0.0f;
   const float timestep = 1.0f / 60.0f;
@@ -72,7 +90,7 @@ static void _iterate(void) {
   }
 }
 
-static void _update_transforms(void) {
+static void _update_transform(void) {
   QUERY(
       ( write, Transform2D, t )
     , ( read, Body2D, b )
@@ -90,7 +108,8 @@ static void _update_transforms(void) {
 
 void physics_frame(void) {
   _create_new_bodies();
+  _prepare_kinematic();
   _iterate();
-  _update_transforms();
+  _update_transform();
 }
 

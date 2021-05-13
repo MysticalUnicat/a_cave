@@ -11,5 +11,6 @@ DECLARE_COMPONENT(Transform2D, {
 DECLARE_COMPONENT(Velocity2D, {
   float x;
   float y;
+  float a;
 });
 
