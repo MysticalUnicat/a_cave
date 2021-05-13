@@ -59,6 +59,8 @@ static void _create_new_bodies(void) {
     cpShapeSetElasticity(c->shape, c->data->elasticity);
     cpShapeSetFriction(c->shape, c->data->friction);
     cpShapeSetCollisionType(c->shape, c->data->collision_type);
+
+    cpSpaceAddShape(physics_space(), c->shape);
   }
 
   QUERY(
@@ -72,6 +74,8 @@ static void _create_new_bodies(void) {
     cpBody * b = Body2D_write(c->body_b)->body;
 
     c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a[0], c->anchor_a[1]), cpv(c->anchor_b[0], c->anchor_b[1]));
+
+    cpSpaceAddConstraint(physics_space(), c->constraint);
   }
 }
 
