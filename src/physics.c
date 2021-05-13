@@ -60,6 +60,19 @@ static void _create_new_bodies(void) {
     cpShapeSetFriction(c->shape, c->data->friction);
     cpShapeSetCollisionType(c->shape, c->data->collision_type);
   }
+
+  QUERY(
+      ( write, Constraint2D, c )
+  ) {
+    if(c->constraint != NULL) {
+      return;
+    }
+
+    cpBody * a = Body2D_write(c->body_a)->body;
+    cpBody * b = Body2D_write(c->body_b)->body;
+
+    c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a[0], c->anchor_a[1]), cpv(c->anchor_b[0], c->anchor_b[1]));
+  }
 }
 
 static void _prepare_kinematic(void) {
