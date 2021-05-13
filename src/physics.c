@@ -126,6 +126,18 @@ static void _prepare_kinematic(void) {
   }
 }
 
+static void _add_events(struct CmdBuf * cbuf) {
+  QUERY(( read, AddImpulse2D, a )) {
+    struct Body2D * body = Body2D_write(a->body);
+
+    if(body && body->body) {
+      cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
+    }
+
+    CmdBuf_despawn(cbuf, entity);
+  }
+}
+
 static void _iterate(void) {
   const float timestep = 1.0f / 60.0f;
   
@@ -157,9 +169,16 @@ static void _update_transform(void) {
 }
 
 void physics_frame(void) {
+  static struct CmdBuf cbuf;
+  CmdBuf_begin_recording(&cbuf);
+  
   _create_new_bodies();
   _prepare_kinematic();
+  _add_events(&cbuf);
   _iterate();
   _update_transform();
+
+  CmdBuf_end_recording(&cbuf);
+  CmdBuf_execute(&cbuf, g_world);
 }
 
