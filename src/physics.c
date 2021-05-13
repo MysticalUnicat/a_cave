@@ -10,6 +10,10 @@ LAZY_GLOBAL(cpSpace *, physics_space, inner = cpSpaceNew();)
 
 static float _speed = 1.0f;
 
+void physics_set_speed(float speed) {
+  _speed = speed;
+}
+
 static void _create_new_bodies(void) {
   QUERY(
       ( read, Transform2D, t )

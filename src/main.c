@@ -74,6 +74,10 @@ void state_frame(void) {
 }
 
 // =============================================================================================================================================================
+static void _paused_begin(void * ud) {
+  physics_set_speed(0.0f);
+}
+
 static void _paused_frame(void * ud) {
   extern struct State playing;
 
@@ -85,8 +89,14 @@ static void _paused_frame(void * ud) {
   DrawText("GAME PAUSED", SCREEN_WIDTH / 2 - MeasureText("GAME PAUSED", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
 }
 
+static void _paused_end(void * ud) {
+  physics_set_speed(1.0f);
+}
+
 struct State paused = {
-  .frame = _paused_frame
+  .begin = _paused_begin,
+  .frame = _paused_frame,
+  .end = _paused_end
 };
 
 // =============================================================================================================================================================
@@ -146,8 +156,8 @@ void _release_ball(void) {
   cpConstraintFree(Constraint2D_write(g.pin_constraint)->constraint);
 
   //ECS(despawn, g_world, 1, &g.pin_constraint);
-  //g.pin_constraint = 0;
-  //g.hold_ball = 0;
+  g.pin_constraint = 0;
+  g.hold_ball = 0;
 }
 
 static void _playing_begin(void * ud) {
