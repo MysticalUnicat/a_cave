@@ -104,7 +104,7 @@ enum CollisionType {
   ct_paddle,
   ct_wall,
   ct_goal,
-  ct_block,
+  ct_brick,
   ct_ball
 };
 
@@ -133,6 +133,13 @@ struct Collision2D_data horizontal_wall_collision_data = {
   .collision_type = ct_wall,
   .kind = Collision2D_box,
   .width = SCREEN_WIDTH,
+  .height = WALL_SIZE
+};
+
+struct Collision2D_data brick_collision_data = {
+  .collision_type = ct_brick,
+  .kind = Collision2D_box,
+  .width = (SCREEN_WIDTH - WALL_SIZE * 2) / BRICKS_PER_LINE,
   .height = WALL_SIZE
 };
 
@@ -215,6 +222,8 @@ static void _playing_begin(void * ud) {
       SPAWN(
           ( Transform2D, .x = j * brick_width + brick_width / 2.0f + game_space_l, .y = (i + 1) * brick_height + game_space_t )
         , ( DrawRectangle, .width = brick_width, .height = brick_height, .color = (i + j) % 2 ? GRAY : DARKGRAY )
+        , ( Body2D, .kind = Body2D_static )
+        , ( Collision2D, .data = &brick_collision_data )
         );
     }
   }
