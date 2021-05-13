@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-void stat_frame(void);
+void stat_update(void);
 uint32_t stat_register(const char * name);
 void stat_submit(uint32_t index, int count);
 void stat_print(uint32_t index);

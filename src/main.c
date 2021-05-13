@@ -5,6 +5,7 @@
 #include "transform.h"
 #include "physics.h"
 #include "render.h"
+#include "event.h"
 
 alias_ecs_Instance * g_world;
 
@@ -161,7 +162,7 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -500 ));
+  SPAWN_EVENT(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -500 ));
   Constraint2D_write(g.pin_constraint)->inactive = true;
 
   g.hold_ball = 0;
@@ -268,7 +269,7 @@ int main(void) {
 
   while(!WindowShouldClose()) {
     state_frame();
-    physics_frame();
+    physics_update();
     render_frame();
   }
 }

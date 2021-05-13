@@ -51,7 +51,7 @@ Texture2D get_texture(TextureHandle handle) {
   return _texcache.texture[handle];
 }
 
-void cleanup_textures(void) {
+void textures_update(void) {
   for(uint32_t i = 0; i < _texcache.length; i++) {
     if(_texcache.frame[i] == 0) {
       // skip unloaded textures

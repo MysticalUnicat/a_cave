@@ -64,5 +64,5 @@ DECLARE_COMPONENT(AddImpulse2D, {
 
 cpSpace * physics_space(void);
 void physics_set_speed(float speed);
-void physics_frame(void);
+void physics_update(void);
 

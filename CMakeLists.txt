@@ -15,6 +15,7 @@ target_include_directories(chipmunk_static PUBLIC ext/Chipmunk2D/include)
 
 add_executable(a_cave
   src/cbuf.c
+  src/event.c
   src/game.c
   src/main.c
   src/physics.c
