@@ -21,7 +21,8 @@ alias_ecs_Instance * g_world;
 struct {
   Entity paddle;
   Entity hold_ball;
-  Entity hold_constraint;
+  Entity pin_constraint;
+  Entity rotary_constraint;
   int life;
 } g;
 
@@ -121,7 +122,8 @@ void _teleport_ball_to_paddle(Entity ball) {
 
 void _hold_ball(Entity ball) {
   g.hold_ball = ball;
-  g.hold_constraint = SPAWN(( Constraint2D, .kind = Constraint2D_rotary, .body_a = g.paddle, .body_b = g.hold_ball ));
+  g.pin_constraint = SPAWN(( Constraint2D, .kind = Constraint2D_pin, .body_a = g.paddle, .body_b = g.hold_ball ));
+  g.rotary_constraint = SPAWN(( Constraint2D, .kind = Constraint2D_rotary, .body_a = g.paddle, .body_b = g.hold_ball ));
 }
 
 void _release_ball(void) {
