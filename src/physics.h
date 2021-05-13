@@ -47,6 +47,8 @@ DECLARE_COMPONENT(Constraint2D, {
   float anchor_b[2];
   float min;
   float max;
+
+  bool active;
   cpConstraint * constraint;
 });
 
