@@ -10,8 +10,8 @@
 SOA(Stats
   , ( const char *, name )
   , ( uint32_t, sort )
-  , ( uint32_t, total )
-  , ( uint32_t, accum ))
+  , ( int, total )
+  , ( int, accum ))
 
 static struct Stats _stats;
 static uint32_t _top;
@@ -49,7 +49,7 @@ uint32_t stat_register(const char * name) {
   return index;
 }
 
-void stat_submit(uint32_t index, uint32_t count) {
+void stat_submit(uint32_t index, int count) {
   _stats.accum[index] += count;
 }
 
