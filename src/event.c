@@ -2,7 +2,7 @@
 
 DEFINE_COMPONENT(Event)
 
-static uint32_t _id;
+static uint32_t _id = 1;
 
 uint32_t event_id(void) {
   return _id++;
