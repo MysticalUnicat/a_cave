@@ -160,7 +160,7 @@ static void _playing_begin(void * ud) {
               );
 
   Entity ball = SPAWN(
-                   ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 30.0f )
+                   ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 10.0f )
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  , ( Body2D, .kind = Body2D_dynamic, .mass = 1.0f, .moment = 1.0f )
                  , ( Collision2D, .data = &ball_collision_data )
