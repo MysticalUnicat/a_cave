@@ -36,5 +36,6 @@ DECLARE_COMPONENT(Collision2D, {
   cpShape * shape;
 });
 
+cpSpace * physics_space(void);
 void physics_frame(void);
 
