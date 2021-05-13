@@ -112,6 +112,20 @@ struct Collision2D_data ball_collision_data = {
   .radius = 7.0f
 };
 
+struct Collision2D_data vertical_wall_collision_data = {
+  .collision_type = ct_wall,
+  .kind = Collision2D_box,
+  .width = WALL_SIZE,
+  .height = SCREEN_HEIGHT
+};
+
+struct Collision2D_data horizontal_wall_collision_data = {
+  .collision_type = ct_wall,
+  .kind = Collision2D_box,
+  .width = SCREEN_WIDTH,
+  .height = WALL_SIZE
+};
+
 void _teleport_ball_to_paddle(Entity ball) {
   const struct Body2D * paddle_body = Body2D_read(g.paddle);
   struct Body2D * ball_body = Body2D_write(ball);
@@ -125,7 +139,15 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  //ECS(despawn, g_world, g.pin_constraint);
+  struct Body2D * ball_body = Body2D_write(g.hold_ball);
+
+  cpBodyApplyImpulseAtLocalPoint(ball_body->body, cpv(0, -500), cpv(0, 5));
+
+  cpConstraintFree(Constraint2D_write(g.pin_constraint)->constraint);
+
+  //ECS(despawn, g_world, 1, &g.pin_constraint);
+  //g.pin_constraint = 0;
+  //g.hold_ball = 0;
 }
 
 static void _playing_begin(void * ud) {
@@ -158,18 +180,24 @@ static void _playing_begin(void * ud) {
   SPAWN(
       ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = WALL_SIZE / 2.0f )
     , ( DrawRectangle, .width = SCREEN_WIDTH, .height = WALL_SIZE, .color = DARKGRAY )
+    , ( Body2D, .kind = Body2D_static )
+    , ( Collision2D, .data = &horizontal_wall_collision_data )
     );
 
   // left wall
   SPAWN(
       ( Transform2D, .x = WALL_SIZE / 2.0f, .y = SCREEN_HEIGHT / 2.0f )
     , ( DrawRectangle, .width = WALL_SIZE, .height = SCREEN_HEIGHT, .color = DARKGRAY )
+    , ( Body2D, .kind = Body2D_static )
+    , ( Collision2D, .data = &vertical_wall_collision_data )
     );
 
   // right wall
   SPAWN(
       ( Transform2D, .x = SCREEN_WIDTH - (WALL_SIZE / 2.0f), .y = SCREEN_HEIGHT / 2.0f )
     , ( DrawRectangle, .width = WALL_SIZE, .height = SCREEN_HEIGHT, .color = DARKGRAY )
+    , ( Body2D, .kind = Body2D_static )
+    , ( Collision2D, .data = &vertical_wall_collision_data )
     );
 
   for(uint32_t i = 0; i < LINES_OF_BRICKS; i++) {
