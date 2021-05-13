@@ -73,14 +73,14 @@ static void _create_new_bodies(void) {
       ( write, Constraint2D, c )
   ) {
     if(c->constraint != NULL) {
-      if(!c->active) {
+      if(c->inactive) {
         cpConstraintFree(c->constraint);
         c->constraint = NULL;
       }
       return;
     }
 
-    if(!c->active) {
+    if(c->inactive) {
       return;
     }
 

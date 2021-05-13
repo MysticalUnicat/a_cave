@@ -13,6 +13,8 @@ DECLARE_COMPONENT(Body2D, {
   } kind;
   float mass;
   float moment;
+
+  bool inactive;
   cpBody * body;
 });
 
@@ -33,6 +35,8 @@ struct Collision2D_data {
 DECLARE_COMPONENT(Collision2D, {
   Entity body;
   struct Collision2D_data * data;
+
+  bool inactive;
   cpShape * shape;
 });
 
@@ -48,7 +52,7 @@ DECLARE_COMPONENT(Constraint2D, {
   float min;
   float max;
 
-  bool active;
+  bool inactive;
   cpConstraint * constraint;
 });
 
