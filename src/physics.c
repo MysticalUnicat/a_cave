@@ -122,11 +122,16 @@ static void _prepare_kinematic(void) {
 }
 
 static void _add_events(void) {
-  QUERY(( read, AddImpulse2D, a )) {
+  QUERY(( write, AddImpulse2D, a )) {
+    if(a->body == 0) {
+      printf("this should be dead!\n");
+      return;
+    }
     struct Body2D * body = Body2D_write(a->body);
     if(body && body->body) {
       cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
     }
+    a->body = 0;
   }
 }
 
