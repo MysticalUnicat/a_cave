@@ -16,12 +16,6 @@ void physics_set_speed(float speed) {
   _speed = speed;
 }
 
-static void _cleanup_constraint(cpSpace * space, void * key, void * data) {
-  cpConstraint * c = (cpConstraint *)data;
-  cpSpaceRemoveConstraint(space, c);
-  cpConstraintFree(c);
-}
-
 static void _create_new_bodies(void) {
   QUERY(
       ( read, Transform2D, t )
@@ -82,7 +76,8 @@ static void _create_new_bodies(void) {
   ) {
     if(c->constraint != NULL) {
       if(c->inactive) {
-        cpSpaceAddPostStepCallback(physics_space(), _cleanup_constraint, c->constraint, c->constraint);
+        cpSpaceRemoveConstraint(physics_space(), c->constraint);
+        cpConstraintFree(c->constraint);
         c->constraint = NULL;
       }
       return;
