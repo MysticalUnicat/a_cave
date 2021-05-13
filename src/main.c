@@ -87,22 +87,29 @@ struct State paused = {
 };
 
 // =============================================================================================================================================================
+enum CollisionType {
+  ct_paddle,
+  ct_wall,
+  ct_goal,
+  ct_block,
+  ct_ball
+};
+
 struct Collision2D_data paddle_collision_data = {
-  .friction = 1.0f,
+  .collision_type = ct_paddle,
+  .kind = Collision2D_box,
   .width = SCREEN_WIDTH / 10.0f,
   .height = 20.0f,
-  .kind = Collision2D_box,
-  .collision_type = 0,
-  
+  .radius = 1.0f
 };
 
 static void _playing_begin(void * ud) {
-  
   _paddle = SPAWN(
                 ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
               , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 20.0f, .color = BLACK )
               , ( Body2D, .kind = Body2D_kinematic )
               , ( Collision2D, .data = &paddle_collision_data )
+              , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
               );
 
   _held_ball = SPAWN(
@@ -146,17 +153,25 @@ static void _playing_begin(void * ud) {
         );
     }
   }
+
+  // -
+
+  cpSpaceSetGravity(physics_space(), cpv(0.0f, 0.0f));
+  cpSpaceSetDamping(physics_space(), 0.0f);
 }
 
 static void _playing_frame(void * ud) {
   extern struct State paused;
-  //float delta = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
+  float delta = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
+
+  Velocity2D_write(_paddle)->x = delta;
 
   if(IsKeyPressed('P')) {
     state_push(&paused);
+    return;
   }
 
-  //physics_frame();
+  
 }
 
 struct State playing = {
