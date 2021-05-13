@@ -44,6 +44,7 @@ DECLARE_COMPONENT(Constraint2D, {
   Entity body_b;
   float anchor_a[2];
   float anchor_b[2];
+  cpConstraint * constraint;
 });
 
 cpSpace * physics_space(void);
