@@ -38,12 +38,15 @@ DECLARE_COMPONENT(Collision2D, {
 
 DECLARE_COMPONENT(Constraint2D, {
   enum {
-    Constraint2D_pin
+    Constraint2D_pin,
+    Constraint2D_rotary
   } kind;
   Entity body_a;
   Entity body_b;
   float anchor_a[2];
   float anchor_b[2];
+  float min;
+  float max;
   cpConstraint * constraint;
 });
 
