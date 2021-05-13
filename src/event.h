@@ -8,7 +8,7 @@ DECLARE_COMPONENT(Event, {
 
 #define SPAWN_EVENT(...) SPAWN(( Event, .id = event_id() ), ## __VA_ARGS__)
 
-#define EVENT_QUERY(...) \
+#define QUERY_EVENT(...) \
   static uint32_t CAT(_leid, __LINE__) = 0; \
   uint32_t CAT(_neid, __LINE__) = CAT(_leid, __LINE__); \
   _QUERY( \
