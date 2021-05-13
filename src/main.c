@@ -162,7 +162,7 @@ static void _playing_begin(void * ud) {
 
 static void _playing_frame(void * ud) {
   extern struct State paused;
-  float delta = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
+  float delta = (IsKeyDown(KEY_RIGHT) ? 50 : 0) - (IsKeyDown(KEY_LEFT) ? 50 : 0);
 
   Velocity2D_write(_paddle)->x = delta;
 
