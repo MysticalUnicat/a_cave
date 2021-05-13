@@ -51,5 +51,6 @@ DECLARE_COMPONENT(Constraint2D, {
 });
 
 cpSpace * physics_space(void);
+void physics_set_speed(float speed);
 void physics_frame(void);
 
