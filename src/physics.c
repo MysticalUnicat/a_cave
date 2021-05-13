@@ -4,7 +4,7 @@ DEFINE_COMPONENT(Body2D)
 
 DEFINE_COMPONENT(Collision2D)
 
-static cpSpace * _space;
+LAZY_GLOBAL(cpSpace *, physics_space, inner = cpSpaceNew();)
 
 static void _create_new_bodies(void) {
   QUERY(
@@ -28,6 +28,8 @@ static void _create_new_bodies(void) {
     }
 
     cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
+
+    cpSpaceAddBody(physics_space(), b->body);
   }
 
   QUERY(
@@ -65,7 +67,7 @@ static void _iterate(void) {
   float time = GetTime();
 
   while(accum < time) {
-    cpSpaceStep(_space, timestep);
+    cpSpaceStep(physics_space(), timestep);
     accum += timestep;
   }
 }
@@ -87,10 +89,6 @@ static void _update_transforms(void) {
 }
 
 void physics_frame(void) {
-  if(_space == NULL) {
-    _space = cpSpaceNew();
-  }
-  
   _create_new_bodies();
   _iterate();
   _update_transforms();
