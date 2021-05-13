@@ -1,4 +1,5 @@
 #include "physics.h"
+#include "event.h"
 
 DEFINE_COMPONENT(Body2D)
 
@@ -122,17 +123,21 @@ static void _prepare_kinematic(void) {
 }
 
 static void _add_events(void) {
-  QUERY(( write, AddImpulse2D, a )) {
-    if(a->body == 0) {
-      printf("this should be dead!\n");
-      return;
+  static uint32_t last_eid = 0;
+  uint32_t next_eid = 0;
+  
+  QUERY(( read, AddImpulse2D, a ), ( read, Event, e )) {
+    if(e->id <= last_eid) {
+      struct Body2D * body = Body2D_write(a->body);
+      if(body && body->body) {
+        cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
+      }
+      a->body = 0;
+    } else if(e->id > next_eid) {
+      next_eid = e->id;
     }
-    struct Body2D * body = Body2D_write(a->body);
-    if(body && body->body) {
-      cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
-    }
-    a->body = 0;
   }
+  last_eid = next_eid;
 }
 
 static void _iterate(void) {
