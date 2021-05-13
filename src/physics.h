@@ -36,6 +36,16 @@ DECLARE_COMPONENT(Collision2D, {
   cpShape * shape;
 });
 
+DECLARE_COMPONENT(Constraint2D, {
+  enum {
+    Constraint2D_pin
+  } kind;
+  Entity body_a;
+  Entity body_b;
+  float anchor_a[2];
+  float anchor_b[2];
+});
+
 cpSpace * physics_space(void);
 void physics_frame(void);
 
