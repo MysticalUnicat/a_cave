@@ -4,6 +4,8 @@ DEFINE_COMPONENT(Body2D)
 
 DEFINE_COMPONENT(Collision2D)
 
+DEFINE_COMPONENT(Constraint2D)
+
 LAZY_GLOBAL(cpSpace *, physics_space, inner = cpSpaceNew();)
 
 static void _create_new_bodies(void) {
