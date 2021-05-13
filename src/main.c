@@ -87,10 +87,22 @@ struct State paused = {
 };
 
 // =============================================================================================================================================================
+struct Collision2D_data paddle_collision_data = {
+  .friction = 1.0f,
+  .width = SCREEN_WIDTH / 10.0f,
+  .height = 20.0f,
+  .kind = Collision2D_box,
+  .collision_type = 0,
+  
+};
+
 static void _playing_begin(void * ud) {
+  
   _paddle = SPAWN(
                 ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
-              , ( DrawRectangle, .width = SCREEN_HEIGHT / 10.0f, .height = 20.0f, .color = BLACK )
+              , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 20.0f, .color = BLACK )
+              , ( Body2D, .kind = Body2D_kinematic )
+              , ( Collision2D, .data = &paddle_collision_data )
               );
 
   _held_ball = SPAWN(
@@ -164,6 +176,7 @@ int main(void) {
 
   while(!WindowShouldClose()) {
     state_frame();
+    physics_frame();
     render_frame();
   }
 }
