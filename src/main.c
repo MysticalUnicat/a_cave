@@ -121,9 +121,8 @@ static void _playing_begin(void * ud) {
   _held_ball = SPAWN(
                    ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 30.0f )
                  , ( DrawCircle, .radius = 7, .color = MAROON )
-                 , ( Body2D, .kind = Body2D_kinematic )
+                 , ( Body2D, .kind = Body2D_dynamic, .mass = 1.0f, .moment = 1.0f )
                  , ( Collision2D, .data = &ball_collision_data )
-                 , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
                  );
 
   int game_space_l = WALL_SIZE;
@@ -177,13 +176,11 @@ static void _playing_frame(void * ud) {
     return;
   }
 
-  float delta = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
-
-  Velocity2D_write(_paddle)->x = delta;
-
-  if(_held_ball) {
-    Velocity2D_write(_held_ball)->x = delta;
+  if(_held_ball && IsKeyPressed(KEY_SPACE)) {
+    _held_ball = 0;
   }
+
+  Velocity2D_write(_paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 }
 
 struct State playing = {
