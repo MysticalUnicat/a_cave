@@ -73,7 +73,14 @@ static void _create_new_bodies(void) {
     cpBody * a = Body2D_write(c->body_a)->body;
     cpBody * b = Body2D_write(c->body_b)->body;
 
-    c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a[0], c->anchor_a[1]), cpv(c->anchor_b[0], c->anchor_b[1]));
+    switch(c->kind) {
+    case Constraint2D_pin:
+      c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a[0], c->anchor_a[1]), cpv(c->anchor_b[0], c->anchor_b[1]));
+      break;
+    case Constraint2D_rotary:
+      c->constraint = cpRotaryLimitJointNew(a, b, c->min, c->max);
+      break;
+    }
 
     cpSpaceAddConstraint(physics_space(), c->constraint);
   }
