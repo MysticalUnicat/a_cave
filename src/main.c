@@ -125,7 +125,7 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  
+  //ECS(despawn, g_world, g.pin_constraint);
 }
 
 static void _playing_begin(void * ud) {
