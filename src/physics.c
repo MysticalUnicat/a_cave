@@ -8,6 +8,8 @@ DEFINE_COMPONENT(Constraint2D)
 
 LAZY_GLOBAL(cpSpace *, physics_space, inner = cpSpaceNew();)
 
+static float _speed = 1.0f;
+
 static void _create_new_bodies(void) {
   QUERY(
       ( read, Transform2D, t )
@@ -105,14 +107,16 @@ static void _prepare_kinematic(void) {
 }
 
 static void _iterate(void) {
-  static float accum = 0.0f;
   const float timestep = 1.0f / 60.0f;
   
-  float time = GetTime();
+  static float p_time = 0.0f;
+  static float s_time = 0.0f;
 
-  while(accum < time) {
+  s_time += GetFrameTime() * _speed;
+
+  while(p_time < s_time) {
     cpSpaceStep(physics_space(), timestep);
-    accum += timestep;
+    p_time += timestep;
   }
 }
 
