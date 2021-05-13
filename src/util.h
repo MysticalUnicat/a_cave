@@ -164,6 +164,10 @@ extern alias_ecs_Instance * g_world;
       MAP(_QUERY_rparam, __VA_ARGS__)                                                                                            \
   )
 
+DECLARE_COMPONENT(Event, {
+  uint32_t frame;
+})
+
 struct Cmd {
   uint32_t size;
   enum {
