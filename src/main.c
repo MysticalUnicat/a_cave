@@ -268,6 +268,7 @@ int main(void) {
   SetTargetFPS(60);
 
   while(!WindowShouldClose()) {
+    event_update();
     state_frame();
     physics_update();
     render_frame();
