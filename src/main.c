@@ -156,8 +156,10 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  physics_apply_impulse(g.hold_ball, cpv(0, -500), cpv(0, 5));
-  physics_deactivate_constraint(g.pin_constraint);
+  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -500 ));
+  Constraint2D_write(g.pin_constraint)->inactive = true;
+
+  g.hold_ball = 0;
 }
 
 static void _playing_begin(void * ud) {

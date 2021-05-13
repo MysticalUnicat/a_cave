@@ -56,10 +56,13 @@ DECLARE_COMPONENT(Constraint2D, {
   cpConstraint * constraint;
 });
 
+DECLARE_COMPONENT(AddImpulse2D, {
+  Entity body;
+  float impulse[2];
+  float point[2];
+});
+
 cpSpace * physics_space(void);
 void physics_set_speed(float speed);
 void physics_frame(void);
-
-void physics_apply_impulse(Entity, cpVect i, cpVect p);
-void physics_deactivate_constraint(Entity);
 
