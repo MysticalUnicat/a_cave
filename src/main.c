@@ -161,7 +161,7 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -5 ));
+  SPAWN(( AddImpulse2D, .body = g.hold_ball, .impulse[1] = -50 ));
   Constraint2D_write(g.pin_constraint)->inactive = true;
 
   g.hold_ball = 0;
