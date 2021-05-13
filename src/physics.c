@@ -74,6 +74,7 @@ static void _create_new_bodies(void) {
   ) {
     if(c->constraint != NULL) {
       if(c->inactive) {
+        cpSpaceRemoveConstraint(physics_space(), c->constraint);
         cpConstraintFree(c->constraint);
         c->constraint = NULL;
       }

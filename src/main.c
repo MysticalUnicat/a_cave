@@ -160,7 +160,7 @@ void _release_ball(void) {
 
   cpBodyApplyImpulseAtLocalPoint(ball_body->body, cpv(0, -500), cpv(0, 5));
 
-  cpConstraintFree(Constraint2D_write(g.pin_constraint)->constraint);
+  Constraint2D_write(g.pin_constraint)->inactive = true;
 
   //ECS(despawn, g_world, 1, &g.pin_constraint);
   g.pin_constraint = 0;
