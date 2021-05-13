@@ -18,9 +18,12 @@ alias_ecs_Instance * g_world;
 #define SCREEN_HEIGHT 600
 #define WALL_SIZE      20
 
-Entity _paddle;
-Entity _held_ball;
-int _life;
+struct {
+  Entity paddle;
+  Entity hold_ball;
+  Entity hold_constraint;
+  int life;
+} g;
 
 struct State {
   struct State * prev;
@@ -109,8 +112,24 @@ struct Collision2D_data ball_collision_data = {
   .radius = 7.0f
 };
 
+void _teleport_ball_to_paddle(Entity ball) {
+  const struct Body2D * paddle_body = Body2D_read(g.paddle);
+  struct Body2D * ball_body = Body2D_write(ball);
+
+  cpBodySetPosition(ball_body->body, cpvadd(cpBodyGetPosition(paddle_body->body), cpv(0, -15)));
+}
+
+void _hold_ball(Entity ball) {
+  g.hold_ball = ball;
+  g.hold_constraint = SPAWN(( Constraint2D, .body_a = g.paddle, .body_b = g.hold_ball ));
+}
+
+void _release_ball(void) {
+  
+}
+
 static void _playing_begin(void * ud) {
-  _paddle = SPAWN(
+  g.paddle = SPAWN(
                 ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f )
               , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 20.0f, .color = BLACK )
               , ( Body2D, .kind = Body2D_kinematic )
@@ -118,7 +137,7 @@ static void _playing_begin(void * ud) {
               , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
               );
 
-  _held_ball = SPAWN(
+  Entity ball = SPAWN(
                    ( Transform2D, .x = SCREEN_WIDTH / 2.0f, .y = SCREEN_HEIGHT * 7.0f / 8.0f - 30.0f )
                  , ( DrawCircle, .radius = 7, .color = MAROON )
                  , ( Body2D, .kind = Body2D_dynamic, .mass = 1.0f, .moment = 1.0f )
@@ -166,6 +185,8 @@ static void _playing_begin(void * ud) {
 
   cpSpaceSetGravity(physics_space(), cpv(0.0f, 0.0f));
   cpSpaceSetDamping(physics_space(), 0.0f);
+
+  _hold_ball(ball);
 }
 
 static void _playing_frame(void * ud) {
@@ -176,11 +197,11 @@ static void _playing_frame(void * ud) {
     return;
   }
 
-  if(_held_ball && IsKeyPressed(KEY_SPACE)) {
-    _held_ball = 0;
+  if(g.hold_ball && IsKeyPressed(KEY_SPACE)) {
+    _release_ball();
   }
 
-  Velocity2D_write(_paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
+  Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 }
 
 struct State playing = {
