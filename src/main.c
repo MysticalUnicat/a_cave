@@ -113,34 +113,39 @@ struct Collision2D_data paddle_collision_data = {
   .kind = Collision2D_box,
   .width = SCREEN_WIDTH / 10.0f,
   .height = 20.0f,
-  .radius = 1.0f
+  .radius = 1.0f,
+  .elasticity = 0.99
 };
 
 struct Collision2D_data ball_collision_data = {
   .collision_type = ct_ball,
   .kind = Collision2D_circle,
-  .radius = 7.0f
+  .radius = 7.0f,
+  .elasticity = 0.99
 };
 
 struct Collision2D_data vertical_wall_collision_data = {
   .collision_type = ct_wall,
   .kind = Collision2D_box,
   .width = WALL_SIZE,
-  .height = SCREEN_HEIGHT
+  .height = SCREEN_HEIGHT,
+  .elasticity = 0.99
 };
 
 struct Collision2D_data horizontal_wall_collision_data = {
   .collision_type = ct_wall,
   .kind = Collision2D_box,
   .width = SCREEN_WIDTH,
-  .height = WALL_SIZE
+  .height = WALL_SIZE,
+  .elasticity = 0.99
 };
 
 struct Collision2D_data brick_collision_data = {
   .collision_type = ct_brick,
   .kind = Collision2D_box,
   .width = (SCREEN_WIDTH - WALL_SIZE * 2) / BRICKS_PER_LINE,
-  .height = WALL_SIZE
+  .height = WALL_SIZE,
+  .elasticity = 0.99
 };
 
 void _teleport_ball_to_paddle(Entity ball) {
