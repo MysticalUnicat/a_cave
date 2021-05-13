@@ -59,7 +59,7 @@ void CmdBuf_execute(struct CmdBuf * cbuf, alias_ecs_Instance * instance) {
       alias_ecs_remove_component_from_entity(instance, cmd->entity, cmd->component);
       break;
     case cmd_despawn:
-      //alias_ecs_despawn(instance, 1, &cmd->entity);
+      alias_ecs_despawn(instance, 1, &cmd->entity);
       break;
     }
     cmd = (struct Cmd *)((uint8_t *)cmd + cmd->size);
