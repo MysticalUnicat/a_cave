@@ -16,7 +16,7 @@ void event_update(void) {
 
   uint32_t next_highest_seen = last_highest_seen;
   QUERY(( read, Event, e )) {
-    if(e->id < last_highest_seen) {
+    if(e->id <= last_highest_seen) {
       CmdBuf_despawn(&cbuf, entity);
     } else if(e->id > next_highest_seen) {
       next_highest_seen = e->id;
