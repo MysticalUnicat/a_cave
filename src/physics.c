@@ -123,7 +123,7 @@ static void _prepare_kinematic(void) {
 }
 
 static void _add_events(void) {
-  QUERY_EVENT(( read, AddImpulse2D, a ), ( read, Event, e )) {
+  QUERY_EVENT(( read, AddImpulse2D, a )) {
     struct Body2D * body = Body2D_write(a->body);
     if(body && body->body) {
       cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
