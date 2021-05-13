@@ -243,7 +243,7 @@ static void _playing_frame(void * ud) {
     _release_ball();
   }
 
-  Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 5 : 0) - (IsKeyDown(KEY_LEFT) ? 5 : 0);
+  Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 }
 
 struct State playing = {
