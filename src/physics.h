@@ -60,3 +60,6 @@ cpSpace * physics_space(void);
 void physics_set_speed(float speed);
 void physics_frame(void);
 
+void physics_apply_impulse(Entity, cpVect i, cpVect p);
+void physics_deactivate_constraint(Entity);
+

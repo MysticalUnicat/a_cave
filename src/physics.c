@@ -14,6 +14,12 @@ void physics_set_speed(float speed) {
   _speed = speed;
 }
 
+static void _cleanup_constraint(cpSpace * space, void * key, void * data) {
+  cpConstraint * c = (cpConstraint *)data;
+  cpSpaceRemoveConstraint(space, c);
+  cpConstraintFree(c);
+}
+
 static void _create_new_bodies(void) {
   QUERY(
       ( read, Transform2D, t )
@@ -74,8 +80,7 @@ static void _create_new_bodies(void) {
   ) {
     if(c->constraint != NULL) {
       if(c->inactive) {
-        cpSpaceRemoveConstraint(physics_space(), c->constraint);
-        cpConstraintFree(c->constraint);
+        cpSpaceAddPostStepCallback(physics_space(), _cleanup_constraint, c->constraint, c->constraint);
         c->constraint = NULL;
       }
       return;
@@ -154,5 +159,30 @@ void physics_frame(void) {
   _prepare_kinematic();
   _iterate();
   _update_transform();
+}
+
+struct ApplyImpulseData {
+  cpVect i;
+  cpVect p;
+};
+
+void _apply_impulse(cpSpace * space, void * key, void * _data) {
+  struct ApplyImpulseData * data = (struct ApplyImpulseData *)_data;
+  cpBodyApplyImpulseAtLocalPoint((cpBody *)key, data->i, data->p);
+  free(_data);
+}
+
+void physics_apply_impulse(Entity e, cpVect i, cpVect p) {
+  struct Body2D * b = Body2D_write(e);
+  if(b->body != NULL) {
+    struct ApplyImpulseData * data = malloc(sizeof(*data));
+    data->i = i;
+    data->p = p;
+    cpSpaceAddPostStepCallback(physics_space(), _apply_impulse, b->body, data);
+  }
+}
+
+void physics_deactivate_constraint(Entity e) {
+  Constraint2D_write(e)->inactive = true;
 }
 

@@ -156,15 +156,8 @@ void _hold_ball(Entity ball) {
 }
 
 void _release_ball(void) {
-  struct Body2D * ball_body = Body2D_write(g.hold_ball);
-
-  cpBodyApplyImpulseAtLocalPoint(ball_body->body, cpv(0, -500), cpv(0, 5));
-
-  Constraint2D_write(g.pin_constraint)->inactive = true;
-
-  //ECS(despawn, g_world, 1, &g.pin_constraint);
-  g.pin_constraint = 0;
-  g.hold_ball = 0;
+  physics_apply_impulse(g.hold_ball, cpv(0, -500), cpv(0, 5));
+  physics_deactivate_constraint(g.pin_constraint);
 }
 
 static void _playing_begin(void * ud) {
