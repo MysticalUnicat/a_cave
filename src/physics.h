@@ -5,6 +5,41 @@
 
 #include <chipmunk/chipmunk.h>
 
+struct Physics_material {
+  uint32_t category;
+  float elasticity;
+  float friction;
+  struct {
+    float x;
+    float y;
+  } surface_velocity;
+};
+
+struct Physics_collision_data {
+  Entity body_a;
+  Entity shape_a;
+  
+  Entity body_b;
+  Entity shape_b;
+
+
+};
+
+struct Physics_collision {
+  enum {
+    Physics_collision_begin,
+    Physics_collision_pre_solve,
+    Physics_collision_post_solve,
+    Physics_collision_seperate
+  } kind;
+  uint32_t category_a;
+  uint32_t category_b;
+  void * user_data;
+  union {
+    bool (* begin)(struct Physics_begin_data * data, void * user_data);
+  };
+};
+
 DECLARE_COMPONENT(Body2D, {
   enum {
     Body2D_dynamic,
