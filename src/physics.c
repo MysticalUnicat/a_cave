@@ -21,6 +21,7 @@ static void _create_new_bodies(void) {
   QUERY(
       ( read, Transform2D, t )
     , ( write, Body2D, b )
+    , ( filter, optional, Transform2D )
   ) {
     if(b->body != NULL) {
       return;
@@ -38,7 +39,9 @@ static void _create_new_bodies(void) {
       break;
     }
 
-    cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
+    if(t != NULL) {
+      cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
+    }
 
     cpSpaceAddBody(physics_space(), b->body);
   }
