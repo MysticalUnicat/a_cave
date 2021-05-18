@@ -46,8 +46,17 @@ static void _create_new_bodies(void) {
   QUERY(
       ( write, Body2D, b )
     , ( write, Collision2D, c )
+    , ( filter, optional, Body2D )
   ) {
-    if(c->shape != NULL || b->body == NULL) {
+    if(c->shape != NULL) {
+      return;
+    }
+
+    if(b == NULL) {
+      b = Body2D_write(c->body);
+    }
+
+    if(b == NULL || b->body == NULL) {
       return;
     }
 

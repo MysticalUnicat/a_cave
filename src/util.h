@@ -94,52 +94,73 @@ extern alias_ecs_Instance * g_world;
 #define _QUERY_wlist_(KIND, ...)        CAT(_QUERY_wlist_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_wlist_read(...)
 #define _QUERY_wlist_write(TYPE, _NAME) TYPE##_component(),
+#define _QUERY_wlist_filter(...)
 
 #define _QUERY_rlist(...)               _QUERY_rlist_ __VA_ARGS__               // unwrap
 #define _QUERY_rlist_(KIND, ...)        CAT(_QUERY_rlist_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_rlist_read(TYPE, _NAME)  TYPE##_component(),
 #define _QUERY_rlist_write(...)
+#define _QUERY_rlist_filter(...)
+
+#define _QUERY_FILTER_MAP_optional ALIAS_ECS_FILTER_OPTIONAL
+#define _QUERY_FILTER_MAP_exclude ALIAS_ECS_FILTER_EXCLUDE
+#define _QUERY_FILTER_MAP_modified ALIAS_ECS_FILTER_MODIFIED
+
+#define _QUERY_flist(...)               _QUERY_flist_ __VA_ARGS__               // unwrap
+#define _QUERY_flist_(KIND, ...)        CAT(_QUERY_flist_, KIND) (__VA_ARGS__) // add kind
+#define _QUERY_flist_read(...)
+#define _QUERY_flist_write(...)
+#define _QUERY_flist_filter(E, TYPE)    { .component = TYPE##_component(), .filter = CAT(_QUERY_FILTER_MAP_, E) }
 
 #define _QUERY_wparam(...)              _QUERY_wparam_ __VA_ARGS__              // unwrap
 #define _QUERY_wparam_(KIND, ...)       CAT(_QUERY_wparam_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_wparam_read(...)
 #define _QUERY_wparam_write(TYPE, NAME) , struct TYPE * NAME
+#define _QUERY_wparam_filter(...)
 
 #define _QUERY_rparam(...)              _QUERY_rparam_ __VA_ARGS__              // unwrap
 #define _QUERY_rparam_(KIND, ...)       CAT(_QUERY_rparam_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_rparam_read(TYPE, NAME)  , struct TYPE * NAME
 #define _QUERY_rparam_write(...)
+#define _QUERY_rparam_filter(...)
 
 #define _QUERY_wext(...)               _QUERY_wext_ __VA_ARGS__               // unwrap
 #define _QUERY_wext_(KIND, ...)        CAT(_QUERY_wext_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_wext_read(...)
 #define _QUERY_wext_write(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
+#define _QUERY_wext_filter(...)
 
 #define _QUERY_rext(...)               _QUERY_rext_ __VA_ARGS__              // unwrap
 #define _QUERY_rext_(KIND, ...)        CAT(_QUERY_rext_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_rext_read(TYPE, NAME)  struct TYPE * NAME = (struct TYPE *)data[i++];
 #define _QUERY_rext_write(...)
+#define _QUERY_rext_filter(...)
 
 #define _QUERY_warg(...)                _QUERY_warg_ __VA_ARGS__               // unwrap
 #define _QUERY_warg_(KIND, ...)         CAT(_QUERY_warg_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_warg_read(...)
 #define _QUERY_warg_write(_TYPE, NAME)  , NAME
+#define _QUERY_warg_filter(...)
 
 #define _QUERY_rarg(...)                _QUERY_rarg_ __VA_ARGS__               // unwrap
 #define _QUERY_rarg_(KIND, ...)         CAT(_QUERY_rarg_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_rarg_read(_TYPE, NAME)   , NAME
 #define _QUERY_rarg_write(...)
+#define _QUERY_rarg_filter(...)
 
 #define _QUERY(EACH_INJECT, POST_INJECT, ...) \
   static alias_ecs_Query * CAT(query, __LINE__) = NULL; \
   if(CAT(query, __LINE__) == NULL) { \
     alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
     alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
+    alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
     alias_ecs_create_query(g_world, &(alias_ecs_QueryCreateInfo) { \
       .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
       .write_components = _wlist, \
       .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
-      .read_components = _rlist \
+      .read_components = _rlist, \
+      .num_filters = sizeof(_flist) / sizeof(_flist[0]), \
+      .filters = _flist \
     }, &CAT(query, __LINE__)); \
   } \
   auto void CAT(query_fn_, __LINE__) \
