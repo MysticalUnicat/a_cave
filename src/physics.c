@@ -54,9 +54,11 @@ static void _create_new_bodies(void) {
 
     if(b == NULL) {
       b = Body2D_write(c->body);
+      printf("indirect body for collision\n");
     }
 
     if(b == NULL || b->body == NULL) {
+      printf("body not found for collision\n");
       return;
     }
 
