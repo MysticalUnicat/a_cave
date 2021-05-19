@@ -17,11 +17,10 @@ void physics_set_speed(float speed) {
   _speed = speed;
 }
 
-static void _create_new_bodies(void) {
+static void _create_bodies(void) {
   QUERY(
-      ( read, Transform2D, t )
-    , ( write, Body2D, b )
-    , ( filter, optional, Transform2D )
+      ( write, Body2D, b )
+    , ( filter, exclude, Transform2D )
   ) {
     if(b->body != NULL) {
       return;
@@ -39,26 +38,45 @@ static void _create_new_bodies(void) {
       break;
     }
 
-    if(t != NULL) {
-      cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
-    }
-
     cpSpaceAddBody(physics_space(), b->body);
   }
 
   QUERY(
-      ( write, Body2D, b )
-    , ( write, Collision2D, c )
-    , ( filter, optional, Body2D )
+      ( read, Transform2D, t )
+    , ( write, Body2D, b )
+  ) {
+    if(b->body != NULL) {
+      return;
+    }
+
+    switch(b->kind) {
+    case Body2D_dynamic:
+      b->body = cpBodyNew(b->mass, b->moment);
+      break;
+    case Body2D_kinematic:
+      b->body = cpBodyNewKinematic();
+      break;
+    case Body2D_static:
+      b->body = cpBodyNewStatic();
+      break;
+    }
+
+    cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
+
+    cpSpaceAddBody(physics_space(), b->body);
+  }
+}
+
+static void _create_shapes(void) {
+  QUERY(
+      ( write, Collision2D, c )
+    , ( filter, exclude, Body2D )
   ) {
     if(c->shape != NULL) {
       return;
     }
 
-    if(b == NULL) {
-      b = Body2D_write(c->body);
-      printf("indirect body for collision\n");
-    }
+    struct Body2D * b = Body2D_write(c->body);
 
     if(b == NULL || b->body == NULL) {
       printf("body not found for collision\n");
@@ -86,6 +104,42 @@ static void _create_new_bodies(void) {
     cpSpaceAddShape(physics_space(), c->shape);
   }
 
+  QUERY(
+      ( write, Body2D, b )
+    , ( write, Collision2D, c )
+  ) {
+    if(c->shape != NULL) {
+      return;
+    }
+
+    if(b->body == NULL) {
+      printf("body not found for collision\n");
+      return;
+    }
+
+    switch(c->data->kind) {
+    case Collision2D_circle:
+      c->shape = cpCircleShapeNew(b->body, c->data->radius, cpv(0, 0));
+      break;
+    case Collision2D_box:
+      c->shape = cpBoxShapeNew(b->body, c->data->width, c->data->height, c->data->radius);
+      break;
+    }
+
+    if(c->shape == NULL) {
+      return;
+    }
+
+    cpShapeSetSensor(c->shape, c->data->sensor);
+    cpShapeSetElasticity(c->shape, c->data->elasticity);
+    cpShapeSetFriction(c->shape, c->data->friction);
+    cpShapeSetCollisionType(c->shape, c->data->collision_type);
+
+    cpSpaceAddShape(physics_space(), c->shape);
+  }
+}
+
+static void _create_constraints(void) {
   QUERY(
       ( write, Constraint2D, c )
   ) {
@@ -176,7 +230,9 @@ static void _update_transform(void) {
 }
 
 void physics_update(void) {
-  _create_new_bodies();
+  _create_bodies();
+  _create_shapes();
+  _create_constraints();
   _prepare_kinematic();
   _add_events();
   _iterate();
