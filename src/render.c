@@ -16,14 +16,14 @@ void render_frame(void) {
       ( read, Transform2D, t )
     , ( read, DrawRectangle, r )
   ) {
-    DrawRectangle(t->x - r->width / 2.0f, t->y - r->height / 2.0f, r->width, r->height, r->color);
+    DrawRectangle(t->position.x - r->width / 2.0f, t->position.y - r->height / 2.0f, r->width, r->height, r->color);
   }
 
   QUERY(
       ( read, Transform2D, t )
     , ( read, DrawCircle, c )
   ) {
-    DrawCircle(t->x, t->y, c->radius, c->color);
+    DrawCircle(t->position.x, t->position.y, c->radius, c->color);
   }
 
   EndDrawing();

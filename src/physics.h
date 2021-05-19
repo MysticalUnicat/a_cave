@@ -2,6 +2,7 @@
 
 #include "util.h"
 #include "transform.h"
+#include "math.h"
 
 #include <chipmunk/chipmunk.h>
 
@@ -9,10 +10,7 @@ struct Physics_material {
   uint32_t category;
   float elasticity;
   float friction;
-  struct {
-    float x;
-    float y;
-  } surface_velocity;
+  v2 surface_velocity;
 };
 
 struct Physics_collision_data {
@@ -21,8 +19,6 @@ struct Physics_collision_data {
   
   Entity body_b;
   Entity shape_b;
-
-
 };
 
 struct Physics_collision {
@@ -82,8 +78,8 @@ DECLARE_COMPONENT(Constraint2D, {
   } kind;
   Entity body_a;
   Entity body_b;
-  float anchor_a[2];
-  float anchor_b[2];
+  v2 anchor_a;
+  v2 anchor_b;
   float min;
   float max;
 
@@ -93,8 +89,8 @@ DECLARE_COMPONENT(Constraint2D, {
 
 DECLARE_COMPONENT(AddImpulse2D, {
   Entity body;
-  float impulse[2];
-  float point[2];
+  v2 impulse;
+  v2 point;
 });
 
 cpSpace * physics_space(void);

@@ -61,7 +61,7 @@ static void _create_bodies(void) {
       break;
     }
 
-    cpBodySetPosition(b->body, (cpVect) { t->x, t->y });
+    cpBodySetPosition(b->body, (cpVect) { t->position.x, t->position.y });
 
     cpSpaceAddBody(physics_space(), b->body);
   }
@@ -137,7 +137,7 @@ static void _create_shapes(void) {
       return;
     }
 
-    _new_shape(b->body, c, t->x, t->y, t->a);
+    _new_shape(b->body, c, t->position.x, t->position.y, t->angle);
   }
 
   QUERY(
@@ -182,7 +182,7 @@ static void _create_shapes(void) {
       return;
     }
 
-    _new_shape(b->body, c, t->x, t->y, t->a);
+    _new_shape(b->body, c, t->position.x, t->position.y, t->angle);
   }
 }
 
@@ -208,7 +208,7 @@ static void _create_constraints(void) {
 
     switch(c->kind) {
     case Constraint2D_pin:
-      c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a[0], c->anchor_a[1]), cpv(c->anchor_b[0], c->anchor_b[1]));
+      c->constraint = cpPinJointNew(a, b, cpv(c->anchor_a.x, c->anchor_a.y), cpv(c->anchor_b.x, c->anchor_b.y));
       break;
     case Constraint2D_rotary:
       c->constraint = cpRotaryLimitJointNew(a, b, c->min, c->max);
@@ -228,12 +228,12 @@ static void _prepare_kinematic(void) {
       return;
     }
 
-    cpBodySetVelocity(b->body, cpv(v->x, v->y));
-    cpBodySetAngularVelocity(b->body, v->a);
+    cpBodySetVelocity(b->body, cpv(v->velocity.x, v->velocity.y));
+    cpBodySetAngularVelocity(b->body, v->angular_velocity);
 
-    v->x = 0.0f;
-    v->y = 0.0f;
-    v->a = 0.0f;
+    v->velocity.x = 0.0f;
+    v->velocity.y = 0.0f;
+    v->angular_velocity = 0.0f;
   }
 }
 
@@ -241,7 +241,7 @@ static void _add_events(void) {
   QUERY_EVENT(( read, AddImpulse2D, a )) {
     struct Body2D * body = Body2D_write(a->body);
     if(body && body->body) {
-      cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse[0], a->impulse[1]), cpv(a->point[0], a->point[1]));
+      cpBodyApplyImpulseAtLocalPoint(body->body, cpv(a->impulse.x, a->impulse.y), cpv(a->point.x, a->point.y));
     }
   }
 }
@@ -270,9 +270,9 @@ static void _update_transform(void) {
     }
 
     cpVect p = cpBodyGetPosition(b->body);
-    t->x = p.x;
-    t->y = p.y;
-    t->a = cpBodyGetAngle(b->body);
+    t->position.x = p.x;
+    t->position.y = p.y;
+    t->angle = cpBodyGetAngle(b->body);
   }
 }
 

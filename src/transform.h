@@ -1,16 +1,33 @@
 #pragma once
 
 #include "util.h"
+#include "math.h"
 
 DECLARE_COMPONENT(Transform2D, {
-  float x;
-  float y;
-  float a;
+  union {
+    struct {
+      float x;
+      float y;
+      float a;
+    };
+    struct {
+      v2 position;
+      float angle;
+    };
+  };
 });
 
 DECLARE_COMPONENT(Velocity2D, {
-  float x;
-  float y;
-  float a;
+  union {
+    struct {
+      float x;
+      float y;
+      float a;
+    };
+    struct {
+      n2 velocity;
+      float angular_velocity;
+    };
+  };
 });
 
