@@ -121,7 +121,6 @@ static void _create_shapes(void) {
     _new_shape(b->body, c, xy.x, xy.y, a);
   }
 
-  /*
   QUERY(
       ( write, Collision2D, c )
     , ( read, Transform2D, t )
@@ -185,7 +184,6 @@ static void _create_shapes(void) {
 
     _new_shape(b->body, c, t->x, t->y, t->a);
   }
-  */
 }
 
 static void _create_constraints(void) {
