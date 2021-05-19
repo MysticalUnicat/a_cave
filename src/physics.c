@@ -99,7 +99,6 @@ static void _new_shape(cpBody * body, struct Collision2D * c, float x, float y, 
 }
 
 static void _create_shapes(void) {
-  /*
   QUERY(
       ( write, Collision2D, c )
     , ( filter, exclude, Transform2D )
@@ -122,6 +121,7 @@ static void _create_shapes(void) {
     _new_shape(b->body, c, xy.x, xy.y, a);
   }
 
+  /*
   QUERY(
       ( write, Collision2D, c )
     , ( read, Transform2D, t )

@@ -110,7 +110,7 @@ extern alias_ecs_Instance * g_world;
 #define _QUERY_flist_(KIND, ...)        CAT(_QUERY_flist_, KIND) (__VA_ARGS__) // add kind
 #define _QUERY_flist_read(...)
 #define _QUERY_flist_write(...)
-#define _QUERY_flist_filter(E, TYPE)    { .component = TYPE##_component(), .filter = CAT(_QUERY_FILTER_MAP_, E) }
+#define _QUERY_flist_filter(E, TYPE)    { .component = TYPE##_component(), .filter = CAT(_QUERY_FILTER_MAP_, E) },
 
 #define _QUERY_wparam(...)              _QUERY_wparam_ __VA_ARGS__              // unwrap
 #define _QUERY_wparam_(KIND, ...)       CAT(_QUERY_wparam_, KIND) (__VA_ARGS__) // add kind
