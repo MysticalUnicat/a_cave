@@ -90,8 +90,6 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
         , { bl, bb }
         };
 
-      printf("creating box with transform %f %f %a\n", t->x, t->y, t->a);
-
       c->shape = cpPolyShapeNew(b->body, 4, verts, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
     }
     break;
@@ -122,7 +120,6 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    printf("creating shape by excluding Transform2D and Body2D %p %p\n", Transform2D_read(entity), Body2D_read(entity));
     
     _new_shape(b, c, &Transform2D_zero);
   }
@@ -139,7 +136,6 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    printf("creating shape by excluding Body2D\n");
     _new_shape(b, c, t);
   }
 
@@ -157,7 +153,6 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    printf("creating shape by excluding Transform2D\n");
     _new_shape(b, c, &Transform2D_zero);
   }
 
@@ -175,7 +170,6 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    printf("creating shape by including Transform2D and Body2D\n");
     _new_shape(b, c, t);
   }
 }
