@@ -55,12 +55,12 @@ extern alias_ecs_Instance * g_world;
   )                                                                                                            \
   const struct IDENT * IDENT##_read(Entity entity) {                                                           \
     const struct IDENT * ptr;                                                                                  \
-    ECS(read_entity_component, g_world, entity, IDENT##_component(), (const void **)&ptr);                       \
+    alias_ecs_read_entity_component(g_world, entity, IDENT##_component(), (const void **)&ptr);                \
     return ptr;                                                                                                \
   }                                                                                                            \
   struct IDENT * IDENT##_write(Entity entity) {                                                                \
     struct IDENT * ptr;                                                                                        \
-    ECS(write_entity_component, g_world, entity, IDENT##_component(), (void **)&ptr);                            \
+    alias_ecs_write_entity_component(g_world, entity, IDENT##_component(), (void **)&ptr);                     \
     return ptr;                                                                                                \
   }
 

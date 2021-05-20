@@ -122,7 +122,8 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    printf("creating shape by excluding Transform2D and Body2D\n");
+    printf("creating shape by excluding Transform2D and Body2D %p %p\n", Transform2D_read(entity), Body2D_read(entity));
+    
     _new_shape(b, c, &Transform2D_zero);
   }
 
