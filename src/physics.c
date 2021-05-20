@@ -70,6 +70,7 @@ static void _create_bodies(void) {
 static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct Transform2D * t) {
   switch(c->data->kind) {
   case Collision2D_circle:
+    printf("circle transform with %g %g %g\n", t->x, t->y, t->a);
     c->shape = cpCircleShapeNew(b->body, c->data->radius, cpBodyWorldToLocal(b->body, *(cpVect *)&t->position));
     break;
   case Collision2D_box:
