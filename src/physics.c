@@ -77,23 +77,14 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
       float hw = c->data->width / 2;
       float hh = c->data->height / 2;
 
-      point2 points[4] = {
+      cpVect points[4] = {
           { -hw, -hh }
         , {  hw, -hh }
         , {  hw,  hh }
         , { -hw,  hh }
         };
-      cpVect vects[4];
 
-      matrix23 m = create_matrix23(t->x, t->y, t->a);
-
-      for(uint32_t i = 0; i < 4; i++) {
-        points[i] = multiply_matrix23_point2(m, points[i]);
-        vects[i].x = points[i].x;
-        vects[i].y = points[i].y;
-      }
-
-      c->shape = cpPolyShapeNewRaw(b->body, 4, vects, 1.0);
+      c->shape = cpPolyShapeNew(b->body, 4, points, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
     }
     break;
   }
