@@ -11,11 +11,13 @@ DECLARE_COMPONENT(Transform2D, {
       float a;
     };
     struct {
-      v2 position;
+      point2 position;
       float angle;
     };
   };
 });
+
+static const struct Transform2D Transform2D_zero = { 0.0f, 0.0f, 0.0f };
 
 DECLARE_COMPONENT(Velocity2D, {
   union {
@@ -25,7 +27,7 @@ DECLARE_COMPONENT(Velocity2D, {
       float a;
     };
     struct {
-      n2 velocity;
+      vector2 velocity;
       float angular_velocity;
     };
   };

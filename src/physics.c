@@ -67,22 +67,34 @@ static void _create_bodies(void) {
   }
 }
 
-static void _new_shape(cpBody * body, struct Collision2D * c, float x, float y, float a) {
-  cpVect box[4];
-  cpFloat w, h;
-  
+static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct Transform2D * t) {
   switch(c->data->kind) {
   case Collision2D_circle:
-    c->shape = cpCircleShapeNew(body, c->data->radius, cpBodyWorldToLocal(body, cpv(x, y)));
+    c->shape = cpCircleShapeNew(b->body, c->data->radius, cpBodyWorldToLocal(b->body, *(cpVect *)&t->position));
     break;
   case Collision2D_box:
-    w = c->data->width / 2;
-    h = c->data->height / 2;
-    box[0] = cpv(x - w, y - h);
-    box[1] = cpv(x + w, y - h);
-    box[2] = cpv(x + w, y + h);
-    box[3] = cpv(x - w, y + h);
-    c->shape = cpBoxShapeNew(body, c->data->width, c->data->height, c->data->radius);
+    {
+      float hw = c->data->width / 2;
+      float hh = c->data->height / 2;
+
+      point2 points[4] = {
+          { -hw, -hh }
+        , {  hw, -hh }
+        , {  hw,  hh }
+        , { -hw,  hh }
+        };
+      cpVect vects[4];
+
+      matrix23 m = create_matrix23(t->x, t->y, t->a);
+
+      for(uint32_t i = 0; i < 4; i++) {
+        points[i] = multiply_matrix23_point2(m, points[i]);
+        vects[i].x = points[i].x;
+        vects[i].y = points[i].y;
+      }
+
+      c->shape = cpPolyShapeNewRaw(b->body, 4, vects, 1.0);
+    }
     break;
   }
 
@@ -107,18 +119,13 @@ static void _create_shapes(void) {
     if(c->shape != NULL) {
       return;
     }
-
     struct Body2D * b = Body2D_write(c->body);
-
     if(b == NULL || b->body == NULL) {
-      printf("body not found for collision\n");
       return;
     }
-
-    cpVect xy = cpBodyGetPosition(b->body);
-    cpFloat a = cpBodyGetAngle(b->body);
-
-    _new_shape(b->body, c, xy.x, xy.y, a);
+    cpVect p = cpBodyGetPosition(b->body);
+    float a = cpBodyGetAngle(b->body);
+    _new_shape(b, c, &(struct Transform2D) { p.x, p.y, a });
   }
 
   QUERY(
@@ -129,15 +136,11 @@ static void _create_shapes(void) {
     if(c->shape != NULL) {
       return;
     }
-
     struct Body2D * b = Body2D_write(c->body);
-
     if(b == NULL || b->body == NULL) {
-      printf("body not found for collision\n");
       return;
     }
-
-    _new_shape(b->body, c, t->position.x, t->position.y, t->angle);
+    _new_shape(b, c, t);
   }
 
   QUERY(
@@ -148,20 +151,15 @@ static void _create_shapes(void) {
     if(c->shape != NULL) {
       return;
     }
-
     if(c->body != 0) {
       b = Body2D_write(c->body);
     }
-
     if(b == NULL || b->body == NULL) {
-      printf("body not found for collision\n");
       return;
     }
-
-    cpVect xy = cpBodyGetPosition(b->body);
-    cpFloat a = cpBodyGetAngle(b->body);
-
-    _new_shape(b->body, c, xy.x, xy.y, a);
+    cpVect p = cpBodyGetPosition(b->body);
+    float a = cpBodyGetAngle(b->body);
+    _new_shape(b, c, &(struct Transform2D) { p.x, p.y, a });
   }
 
   QUERY(
@@ -172,17 +170,13 @@ static void _create_shapes(void) {
     if(c->shape != NULL) {
       return;
     }
-
     if(c->body != 0) {
       b = Body2D_write(c->body);
     }
-
     if(b == NULL || b->body == NULL) {
-      printf("body not found for collision\n");
       return;
     }
-
-    _new_shape(b->body, c, t->position.x, t->position.y, t->angle);
+    _new_shape(b, c, t);
   }
 }
 
