@@ -93,6 +93,7 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
       for(uint32_t i = 0; i < 4; i++) {
         printf("%i %g %g\n", i, verts[i].x, verts[i].y);
       }
+      printf("transform with %g %g %g\n", t->x, t->y, t->a);
 
       c->shape = cpPolyShapeNew(b->body, 4, verts, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
     }
