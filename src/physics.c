@@ -81,6 +81,9 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
         , br =  hw
         , bt = -hh
         , bb =  hh
+        , bx = cpBodyGetPosition(b->body).x
+        , by = cpBodyGetPosition(b->body).y
+        , ba = cpBodyGetAngle(b->body)
         ;
 
       cpVect verts[] = {
@@ -94,6 +97,7 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
         printf("%i %g %g\n", i, verts[i].x, verts[i].y);
       }
       printf("transform with %g %g %g\n", t->x, t->y, t->a);
+      printf("body at %g %g %g\n", bx, by, ba);
 
       c->shape = cpPolyShapeNew(b->body, 4, verts, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
     }
