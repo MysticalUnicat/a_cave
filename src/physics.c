@@ -74,17 +74,23 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
     break;
   case Collision2D_box:
     {
-      float hw = c->data->width / 2;
-      float hh = c->data->height / 2;
+      float
+          hw = c->data->width / 2
+        , hh = c->data->height / 2
+        , bl = -hw
+        , br =  hw
+        , bt = -hh
+        , bb =  hh
+        ;
 
-      cpVect points[4] = {
-          { -hw, -hh }
-        , {  hw, -hh }
-        , {  hw,  hh }
-        , { -hw,  hh }
+      cpVect verts[] = {
+          { br, bb }
+        , { br, bt }
+        , { bl, bt }
+        , { bl, bb }
         };
 
-      c->shape = cpPolyShapeNew(b->body, 4, points, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
+      c->shape = cpPolyShapeNew(b->body, 4, verts, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
     }
     break;
   }
