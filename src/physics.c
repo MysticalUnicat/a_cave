@@ -148,6 +148,14 @@ static void _create_shapes(void) {
     , ( filter, exclude, Body2D )
   ) {
     if(c->shape != NULL) {
+      if(c->inactive) {
+        cpSpaceRemoveShape(physics_space(), c->shape);
+        cpShapeFree(c->shape);
+        c->shape = NULL;
+      }
+      return;
+    }
+    if(c->inactive) {
       return;
     }
     struct Body2D * b = Body2D_write(c->body);
@@ -167,8 +175,11 @@ static void _create_shapes(void) {
       if(c->inactive) {
         cpSpaceRemoveShape(physics_space(), c->shape);
         cpShapeFree(c->shape);
-        
+        c->shape = NULL;
       }
+      return;
+    }
+    if(c->inactive) {
       return;
     }
     struct Body2D * b = Body2D_write(c->body);
@@ -184,6 +195,14 @@ static void _create_shapes(void) {
     , ( filter, exclude, Transform2D )
   ) {
     if(c->shape != NULL) {
+      if(c->inactive) {
+        cpSpaceRemoveShape(physics_space(), c->shape);
+        cpShapeFree(c->shape);
+        c->shape = NULL;
+      }
+      return;
+    }
+    if(c->inactive) {
       return;
     }
     if(c->body != 0) {
@@ -201,6 +220,14 @@ static void _create_shapes(void) {
     , ( read, Transform2D, t )
   ) {
     if(c->shape != NULL) {
+      if(c->inactive) {
+        cpSpaceRemoveShape(physics_space(), c->shape);
+        cpShapeFree(c->shape);
+        c->shape = NULL;
+      }
+      return;
+    }
+    if(c->inactive) {
       return;
     }
     if(c->body != 0) {
