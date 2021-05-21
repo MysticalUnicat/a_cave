@@ -1,4 +1,5 @@
 #include "event.h"
+#include "stats.h"
 
 DEFINE_COMPONENT(Event)
 
@@ -17,6 +18,7 @@ void event_update(void) {
   uint32_t next_highest_seen = last_highest_seen;
   QUERY(( read, Event, e )) {
     if(e->id <= last_highest_seen) {
+      STAT(cleanup ECS event);
       CmdBuf_despawn(&cbuf, entity);
     } else if(e->id > next_highest_seen) {
       next_highest_seen = e->id;
