@@ -100,6 +100,8 @@ DECLARE_COMPONENT(Contact2D, {
   } kind;
   Entity body_a;
   Entity body_b;
+  Entity shape_a;
+  Entity shape_b;
   vector2 velocity;
   normal2 normal;
 });
