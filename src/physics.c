@@ -68,9 +68,15 @@ static void _create_bodies(void) {
 }
 
 static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct Transform2D * t) {
+  cpVect body_xy = cpBodyGetPosition(b->body);
+  float
+      body_x = body_xy.x
+    , body_y = body_xy.y
+    , body_a = cpBodyGetAngle(b->body)
+    ;
+
   switch(c->data->kind) {
   case Collision2D_circle:
-    printf("circle transform with %g %g %g\n", t->x, t->y, t->a);
     c->shape = cpCircleShapeNew(b->body, c->data->radius, cpBodyWorldToLocal(b->body, *(cpVect *)&t->position));
     break;
   case Collision2D_box:
@@ -82,25 +88,28 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
         , br =  hw
         , bt = -hh
         , bb =  hh
-        , bx = cpBodyGetPosition(b->body).x
-        , by = cpBodyGetPosition(b->body).y
-        , ba = cpBodyGetAngle(b->body)
         ;
 
-      cpVect verts[] = {
+      point2 box[] = {
           { br, bb }
         , { br, bt }
         , { bl, bt }
         , { bl, bb }
         };
+      cpVect verts[4];
+
+      // the verts need to be in local space of the body
+      matrix23 body_inverse_matrix = create_matrix23_inverse(body_x, body_y, body_a);
+      matrix23 shape_matrix = create_matrix23(t->x, t->y, t->a);
+      matrix23 m = multiply_matrix23_matrix23(shape_matrix, body_inverse_matrix);
 
       for(uint32_t i = 0; i < 4; i++) {
-        printf("%i %g %g\n", i, verts[i].x, verts[i].y);
+        point2 p = multiply_matrix23_point2(m, box[i]);
+        verts[i].x = p.x;
+        verts[i].y = p.y;
       }
-      printf("transform with %g %g %g\n", t->x, t->y, t->a);
-      printf("body at %g %g %g\n", bx, by, ba);
 
-      c->shape = cpPolyShapeNew(b->body, 4, verts, cpTransformRigid(cpv(t->x, t->y), t->a), 1.0);
+      c->shape = cpPolyShapeNewRaw(b->body, 4, verts, 1.0);
     }
     break;
   }
