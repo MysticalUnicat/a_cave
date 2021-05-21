@@ -9,7 +9,22 @@ DEFINE_COMPONENT(Constraint2D)
 
 DEFINE_COMPONENT(AddImpulse2D)
 
-LAZY_GLOBAL(cpSpace *, physics_space, inner = cpSpaceNew();)
+static cpBool _begin_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {
+ // SPAWN_EVENT(( 
+}
+
+static void _seperate_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {
+}
+
+static inline cpSpace * _create_space(void) {
+  cpSpace * space = cpSpaceNew();
+  cpCollisionHandler * handler = cpSpaceAddDefaultCollisionHandler(space);
+  handler->beginFunc = _begin_event;
+  handler->separateFunc = _seperate_event;
+  return space;
+}
+
+LAZY_GLOBAL(cpSpace *, physics_space, inner = _create_space();)
 
 static float _speed = 1.0f;
 
@@ -79,7 +94,6 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
   case Collision2D_circle:
     {
       cpVect local_position = cpBodyWorldToLocal(b->body, cpv(t->x, t->y));
-      printf("circle %g %g, %g\n", local_position.x, local_position.y, c->data->radius);
       c->shape = cpCircleShapeNew(b->body, c->data->radius, local_position);
     }
     break;
@@ -110,10 +124,8 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
       for(uint32_t i = 0; i < 4; i++) {
         point2 p = multiply_matrix23_point2(m, box[i]);
         verts[i].x = p.x;
-        verts[i].y = p.y;      }
-
-      printf("box %g %g, %g %g, %g %g, %g %g\n", verts[0].x, verts[0].y, verts[1].x, verts[1].y, verts[2].x, verts[2].y, verts[3].x, verts[3].y);
-      
+        verts[i].y = p.y;
+      }
 
       c->shape = cpPolyShapeNewRaw(b->body, 4, verts, 1.0);
     }
