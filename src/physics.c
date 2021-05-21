@@ -164,6 +164,11 @@ static void _create_shapes(void) {
     , ( filter, exclude, Body2D )
   ) {
     if(c->shape != NULL) {
+      if(c->inactive) {
+        cpSpaceRemoveShape(physics_space(), c->shape);
+        cpShapeFree(c->shape);
+        
+      }
       return;
     }
     struct Body2D * b = Body2D_write(c->body);
