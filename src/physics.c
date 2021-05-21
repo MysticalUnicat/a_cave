@@ -11,43 +11,9 @@ DEFINE_COMPONENT(AddImpulse2D)
 
 DEFINE_COMPONENT(Contact2D)
 
-static cpBool _begin_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {
-  CP_ARBITER_GET_BODIES(arb, body_a, body_b);
-  CP_ARBITER_GET_SHAPES(arb, shape_a, shape_b);
-
-  Entity body_a_entity = (Entity)cpBodyGetUserData(body_a);
-  Entity body_b_entity = (Entity)cpBodyGetUserData(body_b);
-
-  Entity shape_a_entity = (Entity)cpShapeGetUserData(shape_a);
-  Entity shape_b_entity = (Entity)cpShapeGetUserData(shape_b);
-
-  printf("contact begin %u %u\n", body_a_entity, body_b_entity);
- 
-  SPAWN_EVENT(( Contact2D, .kind = Contact2D_begin, .body_a = body_a_entity, .body_b = body_b_entity, .shape_a = shape_a_entity, .shape_b = shape_b_entity ));
-
-  return true;
-}
-
-static void _seperate_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {
-  CP_ARBITER_GET_BODIES(arb, body_a, body_b);
-  CP_ARBITER_GET_SHAPES(arb, shape_a, shape_b);
-
-  Entity body_a_entity = (Entity)cpBodyGetUserData(body_a);
-  Entity body_b_entity = (Entity)cpBodyGetUserData(body_b);
-
-  Entity shape_a_entity = (Entity)cpShapeGetUserData(shape_a);
-  Entity shape_b_entity = (Entity)cpShapeGetUserData(shape_b);
-
-  printf("contact seperate %u %u\n", body_a_entity, body_b_entity);
- 
-  SPAWN_EVENT(( Contact2D, .kind = Contact2D_seperate, .body_a = body_a_entity, .body_b = body_b_entity, .shape_a = shape_a_entity, .shape_b = shape_b_entity ));
-}
-
 static inline cpSpace * _create_space(void) {
   cpSpace * space = cpSpaceNew();
   cpCollisionHandler * handler = cpSpaceAddDefaultCollisionHandler(space);
-  handler->beginFunc = _begin_event;
-  handler->separateFunc = _seperate_event;
   return space;
 }
 
