@@ -9,8 +9,12 @@ DEFINE_COMPONENT(Constraint2D)
 
 DEFINE_COMPONENT(AddImpulse2D)
 
+DEFINE_COMPONENT(Contact2D)
+
 static cpBool _begin_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {
- // SPAWN_EVENT(( 
+
+  
+  //SPAWN_EVENT(( Contact2D, .kind = Contact2D_begin ));
 }
 
 static void _seperate_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_data) {

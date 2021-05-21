@@ -93,6 +93,17 @@ DECLARE_COMPONENT(AddImpulse2D, {
   point2 point;
 });
 
+DECLARE_COMPONENT(Contact2D, {
+  enum {
+    Contact2D_begin,
+    Contact2D_seperate
+  } kind;
+  Entity body_a;
+  Entity body_b;
+  vector2 velocity;
+  normal2 normal;
+});
+
 cpSpace * physics_space(void);
 void physics_set_speed(float speed);
 void physics_update(void);
