@@ -109,6 +109,9 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
         verts[i].y = p.y;
       }
 
+      printf("%g %g, %g %g, %g %g, %g %g", verts[0].x, verts[0].y, verts[1].x, verts[1].y, verts[2].x, verts[2].y, verts[3].x, verts[3].y);
+      
+
       c->shape = cpPolyShapeNewRaw(b->body, 4, verts, 1.0);
     }
     break;
