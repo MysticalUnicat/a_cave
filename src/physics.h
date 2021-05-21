@@ -110,3 +110,15 @@ cpSpace * physics_space(void);
 void physics_set_speed(float speed);
 void physics_update(void);
 
+// =============================================================================================================================================================
+
+struct data_PhysicsSpace2D {
+  float damping;
+  vector2 gravity;
+};
+
+struct data_PhysicsMaterial2D {
+  float elasticity;
+  vector2 surface_velocity;
+};
+
