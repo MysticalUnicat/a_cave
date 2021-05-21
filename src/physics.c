@@ -77,7 +77,11 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
 
   switch(c->data->kind) {
   case Collision2D_circle:
-    c->shape = cpCircleShapeNew(b->body, c->data->radius, cpBodyWorldToLocal(b->body, *(cpVect *)&t->position));
+    {
+      cpVect local_position = cpBodyWorldToLocal(b->body, cpv(t->x, t->y));
+      printf("circle %g %g, %g\n", local_position.x, local_position.y, c->data->radius);
+      c->shape = cpCircleShapeNew(b->body, c->data->radius, local_position);
+    }
     break;
   case Collision2D_box:
     {
@@ -106,10 +110,9 @@ static void _new_shape(struct Body2D * b, struct Collision2D * c, const struct T
       for(uint32_t i = 0; i < 4; i++) {
         point2 p = multiply_matrix23_point2(m, box[i]);
         verts[i].x = p.x;
-        verts[i].y = p.y;
-      }
+        verts[i].y = p.y;      }
 
-      printf("%g %g, %g %g, %g %g, %g %g\n", verts[0].x, verts[0].y, verts[1].x, verts[1].y, verts[2].x, verts[2].y, verts[3].x, verts[3].y);
+      printf("box %g %g, %g %g, %g %g, %g %g\n", verts[0].x, verts[0].y, verts[1].x, verts[1].y, verts[2].x, verts[2].y, verts[3].x, verts[3].y);
       
 
       c->shape = cpPolyShapeNewRaw(b->body, 4, verts, 1.0);
