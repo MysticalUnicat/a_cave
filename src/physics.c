@@ -20,6 +20,8 @@ static cpBool _begin_event(cpArbiter * arb, cpSpace * space, cpDataPointer user_
 
   Entity shape_a_entity = (Entity)cpShapeGetUserData(shape_a);
   Entity shape_b_entity = (Entity)cpShapeGetUserData(shape_b);
+
+  printf("contact begin %u %u\n", body_a_entity, body_b_entity);
  
   SPAWN_EVENT(( Contact2D, .kind = Contact2D_begin, .body_a = body_a_entity, .body_b = body_b_entity, .shape_a = shape_a_entity, .shape_b = shape_b_entity ));
 
@@ -35,6 +37,8 @@ static void _seperate_event(cpArbiter * arb, cpSpace * space, cpDataPointer user
 
   Entity shape_a_entity = (Entity)cpShapeGetUserData(shape_a);
   Entity shape_b_entity = (Entity)cpShapeGetUserData(shape_b);
+
+  printf("contact seperate %u %u\n", body_a_entity, body_b_entity);
  
   SPAWN_EVENT(( Contact2D, .kind = Contact2D_seperate, .body_a = body_a_entity, .body_b = body_b_entity, .shape_a = shape_a_entity, .shape_b = shape_b_entity ));
 }
@@ -76,7 +80,7 @@ static void _create_bodies(void) {
       break;
     }
 
-    cpBodySetUserData(b->body, entity);
+    cpBodySetUserData(b->body, (void *)entity);
 
     cpSpaceAddBody(physics_space(), b->body);
   }
@@ -101,7 +105,7 @@ static void _create_bodies(void) {
       break;
     }
 
-    cpBodySetUserData(b->body, entity);
+    cpBodySetUserData(b->body, (void *)entity);
     cpBodySetPosition(b->body, (cpVect) { t->position.x, t->position.y });
 
     cpSpaceAddBody(physics_space(), b->body);
@@ -162,7 +166,7 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
     return;
   }
 
-  cpShapeSetUserData(c->shape, entity);
+  cpShapeSetUserData(c->shape, (void *)entity);
   cpShapeSetSensor(c->shape, c->data->sensor);
   cpShapeSetElasticity(c->shape, c->data->elasticity);
   cpShapeSetFriction(c->shape, c->data->friction);
