@@ -86,18 +86,18 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
     , body_a = cpBodyGetAngle(b->body)
     ;
 
-  switch(c->data->kind) {
+  switch(c->kind) {
   case Collision2D_circle:
     {
       cpVect local_position = cpBodyWorldToLocal(b->body, cpv(t->x, t->y));
-      c->shape = cpCircleShapeNew(b->body, c->data->radius, local_position);
+      c->shape = cpCircleShapeNew(b->body, c->radius, local_position);
     }
     break;
   case Collision2D_box:
     {
       float
-          hw = c->data->width / 2
-        , hh = c->data->height / 2
+          hw = c->width / 2
+        , hh = c->height / 2
         , bl = -hw
         , br =  hw
         , bt = -hh
@@ -133,10 +133,10 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
   }
 
   cpShapeSetUserData(c->shape, (void *)entity);
-  cpShapeSetSensor(c->shape, c->data->sensor);
-  cpShapeSetElasticity(c->shape, c->data->elasticity);
-  cpShapeSetFriction(c->shape, c->data->friction);
-  cpShapeSetCollisionType(c->shape, c->data->collision_type);
+  cpShapeSetSensor(c->shape, c->sensor);
+  cpShapeSetElasticity(c->shape, c->elasticity);
+  cpShapeSetFriction(c->shape, c->friction);
+  cpShapeSetCollisionType(c->shape, c->collision_type);
 
   cpSpaceAddShape(physics_space(), c->shape);
 }

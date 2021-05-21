@@ -49,23 +49,19 @@ DECLARE_COMPONENT(Body2D, {
   cpBody * body;
 });
 
-struct Collision2D_data {
+DECLARE_COMPONENT(Collision2D, {
+  Entity body;
   enum {
     Collision2D_circle,
     Collision2D_box
   } kind;
-  uint32_t collision_type;
   float radius;
   float width;
   float height;
+  uint32_t collision_type;
   bool sensor;
   float elasticity;
   float friction;
-};
-
-DECLARE_COMPONENT(Collision2D, {
-  Entity body;
-  struct Collision2D_data * data;
 
   bool inactive;
   cpShape * shape;
