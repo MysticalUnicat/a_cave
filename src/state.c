@@ -21,7 +21,7 @@ void state_pop(void) {
     _current->end(_current->ud);
   }
   _current = _current->prev;
-  if(_current->unpause != NULL) {
+  if(_current != NULL && _current->unpause != NULL) {
     _current->unpause(_current->ud);
   }
 }
