@@ -29,7 +29,7 @@ static int _contact_begin_event(cpArbiter * arb, cpSpace * space, void * user_da
     , .shape_a = (Entity)cpShapeGetUserData(shape_a)
     , .shape_b = (Entity)cpShapeGetUserData(shape_b)
     ));
-  return 0;
+  return 1;
 }
 
 static void _contact_seperate_event(cpArbiter * arb, cpSpace * space, void * user_data) {
