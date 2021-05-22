@@ -90,8 +90,8 @@ DECLARE_COMPONENT(AddImpulse2D, {
 });
 
 DECLARE_COMPONENT(Contact2D, {
-  uint32_t collision_type_a;
-  uint32_t collision_type_b;
+  uint32_t type_a;
+  uint32_t type_b;
   Entity body_a;
   Entity body_b;
   Entity shape_a;

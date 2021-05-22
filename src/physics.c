@@ -22,8 +22,8 @@ static int _contact_begin_event(cpArbiter * arb, cpSpace * space, void * user_da
     uint32_t type_t = type_a; type_a = type_b; type_b = type_t;
   }
   SPAWN_EVENT(( Contact2D, 
-      .collision_type_a = type_a
-    , .collision_type_b = type_b
+      .type_a = type_a
+    , .type_b = type_b
     , .body_a = (Entity)cpBodyGetUserData(body_a)
     , .body_b = (Entity)cpBodyGetUserData(body_b)
     , .shape_a = (Entity)cpShapeGetUserData(shape_a)
@@ -43,8 +43,8 @@ static void _contact_seperate_event(cpArbiter * arb, cpSpace * space, void * use
     uint32_t type_t = type_a; type_a = type_b; type_b = type_t;
   }
   SPAWN_EVENT(( Contact2D, 
-      .collision_type_a = type_a
-    , .collision_type_b = type_b
+      .type_a = type_a
+    , .type_b = type_b
     , .body_a = (Entity)cpBodyGetUserData(body_a)
     , .body_b = (Entity)cpBodyGetUserData(body_b)
     , .shape_a = (Entity)cpShapeGetUserData(shape_a)
