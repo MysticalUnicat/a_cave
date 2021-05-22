@@ -90,10 +90,8 @@ DECLARE_COMPONENT(AddImpulse2D, {
 });
 
 DECLARE_COMPONENT(Contact2D, {
-  enum {
-    Contact2D_begin,
-    Contact2D_seperate
-  } kind;
+  uint32_t collision_type_a;
+  uint32_t collision_type_b;
   Entity body_a;
   Entity body_b;
   Entity shape_a;
@@ -104,17 +102,7 @@ DECLARE_COMPONENT(Contact2D, {
 
 cpSpace * physics_space(void);
 void physics_set_speed(float speed);
+void physics_set_gravity(float x, float y);
+void physics_set_damping(float d);
 void physics_update(void);
-
-// =============================================================================================================================================================
-
-struct data_PhysicsSpace2D {
-  float damping;
-  vector2 gravity;
-};
-
-struct data_PhysicsMaterial2D {
-  float elasticity;
-  vector2 surface_velocity;
-};
 

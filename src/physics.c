@@ -11,9 +11,52 @@ DEFINE_COMPONENT(AddImpulse2D)
 
 DEFINE_COMPONENT(Contact2D)
 
+static int _contact_begin_event(cpArbiter * arb, cpSpace * space, void * user_data) {
+  CP_ARBITER_GET_BODIES(arb, body_a, body_b);
+  CP_ARBITER_GET_SHAPES(arb, shape_a, shape_b);
+  uint32_t type_a = cpShapeGetCollisionType(shape_a);
+  uint32_t type_b = cpShapeGetCollisionType(shape_b);
+  if(type_a > type_b) {
+    cpBody * body_t = body_a; body_a = body_b; body_b = body_t;
+    cpShape * shape_t = shape_a; shape_a = shape_b; shape_b = shape_t;
+    uint32_t type_t = type_a; type_a = type_b; type_b = type_t;
+  }
+  SPAWN_EVENT(( Contact2D, 
+      .collision_type_a = type_a
+    , .collision_type_b = type_b
+    , .body_a = (Entity)cpBodyGetUserData(body_a)
+    , .body_b = (Entity)cpBodyGetUserData(body_b)
+    , .shape_a = (Entity)cpShapeGetUserData(shape_a)
+    , .shape_b = (Entity)cpShapeGetUserData(shape_b)
+    ));
+  return 0;
+}
+
+static void _contact_seperate_event(cpArbiter * arb, cpSpace * space, void * user_data) {
+  CP_ARBITER_GET_BODIES(arb, body_a, body_b);
+  CP_ARBITER_GET_SHAPES(arb, shape_a, shape_b);
+  uint32_t type_a = cpShapeGetCollisionType(shape_a);
+  uint32_t type_b = cpShapeGetCollisionType(shape_b);
+  if(type_a > type_b) {
+    cpBody * body_t = body_a; body_a = body_b; body_b = body_t;
+    cpShape * shape_t = shape_a; shape_a = shape_b; shape_b = shape_t;
+    uint32_t type_t = type_a; type_a = type_b; type_b = type_t;
+  }
+  SPAWN_EVENT(( Contact2D, 
+      .collision_type_a = type_a
+    , .collision_type_b = type_b
+    , .body_a = (Entity)cpBodyGetUserData(body_a)
+    , .body_b = (Entity)cpBodyGetUserData(body_b)
+    , .shape_a = (Entity)cpShapeGetUserData(shape_a)
+    , .shape_b = (Entity)cpShapeGetUserData(shape_b)
+    ));
+}
+
 static inline cpSpace * _create_space(void) {
   cpSpace * space = cpSpaceNew();
   cpCollisionHandler * handler = cpSpaceAddDefaultCollisionHandler(space);
+  handler->beginFunc = _contact_begin_event;
+  handler->separateFunc = _contact_seperate_event;
   return space;
 }
 
@@ -23,6 +66,14 @@ static float _speed = 1.0f;
 
 void physics_set_speed(float speed) {
   _speed = speed;
+}
+
+void physics_set_gravity(float x, float y) {
+  cpSpaceSetGravity(physics_space(), cpv(x, y));
+}
+
+void physics_set_damping(float d) {
+  cpSpaceSetDamping(physics_space(), d);
 }
 
 static void _create_bodies(void) {
