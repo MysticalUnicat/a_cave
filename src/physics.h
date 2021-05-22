@@ -90,6 +90,10 @@ DECLARE_COMPONENT(AddImpulse2D, {
 });
 
 DECLARE_COMPONENT(Contact2D, {
+  enum {
+    Contact2D_begin,
+    Contact2D_seperate
+  } kind;
   uint32_t type_a;
   uint32_t type_b;
   Entity body_a;
