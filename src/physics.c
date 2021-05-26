@@ -11,6 +11,8 @@ DEFINE_COMPONENT(AddImpulse2D)
 
 DEFINE_COMPONENT(Contact2D)
 
+DEFINE_COMPONENT(Velocity2D)
+
 static int _contact_begin_event(cpArbiter * arb, cpSpace * space, void * user_data) {
   CP_ARBITER_GET_BODIES(arb, body_a, body_b);
   CP_ARBITER_GET_SHAPES(arb, shape_a, shape_b);
@@ -81,7 +83,7 @@ void physics_set_damping(float d) {
 static void _create_bodies(void) {
   QUERY(
       ( write, Body2D, b )
-    , ( filter, exclude, Transform2D )
+    , ( filter, exclude, alias_LocalToWorld2D )
   ) {
     if(b->body != NULL) {
       return;
@@ -105,7 +107,7 @@ static void _create_bodies(void) {
   }
 
   QUERY(
-      ( read, Transform2D, t )
+      ( read, alias_LocalToWorld2D, t )
     , ( write, Body2D, b )
   ) {
     if(b->body != NULL) {
@@ -125,13 +127,13 @@ static void _create_bodies(void) {
     }
 
     cpBodySetUserData(b->body, (void *)entity);
-    cpBodySetPosition(b->body, (cpVect) { t->position.x, t->position.y });
+    cpBodySetPosition(b->body, cpv(t->value._13, t->value._23));
 
     cpSpaceAddBody(physics_space(), b->body);
   }
 }
 
-static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c, const struct Transform2D * t) {
+static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c, const struct alias_LocalToWorld2D * t) {
   cpVect body_xy = cpBodyGetPosition(b->body);
   float
       body_x = body_xy.x
@@ -142,7 +144,7 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
   switch(c->kind) {
   case Collision2D_circle:
     {
-      cpVect local_position = cpBodyWorldToLocal(b->body, cpv(t->x, t->y));
+      cpVect local_position = cpBodyWorldToLocal(b->body, cpv(t->value._13, t->value._23));
       c->shape = cpCircleShapeNew(b->body, c->radius, local_position);
     }
     break;
@@ -157,7 +159,7 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
         , bb =  hh
         ;
 
-      point2 box[] = {
+      alias_Point2D box[] = {
           { br, bb }
         , { br, bt }
         , { bl, bt }
@@ -166,12 +168,12 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
       cpVect verts[4];
 
       // the verts need to be in local space of the body
-      matrix23 body_inverse_matrix = create_matrix23_inverse(body_x, body_y, body_a);
-      matrix23 shape_matrix = create_matrix23(t->x, t->y, t->a);
-      matrix23 m = multiply_matrix23_matrix23(shape_matrix, body_inverse_matrix);
+      alias_Affine2D body_inverse_matrix = alias_construct_Affine2D_inverse(body_x, body_y, body_a);
+      alias_Affine2D shape_matrix = t->value;
+      alias_Affine2D m = alias_multiply_Affine2D_Affine2D(shape_matrix, body_inverse_matrix);
 
       for(uint32_t i = 0; i < 4; i++) {
-        point2 p = multiply_matrix23_point2(m, box[i]);
+        alias_Point2D p = alias_multiply_Affine2D_Point2D(m, box[i]);
         verts[i].x = p.x;
         verts[i].y = p.y;
       }
@@ -197,7 +199,7 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
 static void _create_shapes(void) {
   QUERY(
       ( write, Collision2D, c )
-    , ( filter, exclude, Transform2D )
+    , ( filter, exclude, alias_LocalToWorld2D )
     , ( filter, exclude, Body2D )
   ) {
     if(c->shape != NULL) {
@@ -216,12 +218,12 @@ static void _create_shapes(void) {
       return;
     }
     
-    _new_shape(entity, b, c, &Transform2D_zero);
+    _new_shape(entity, b, c, &alias_LocalToWorld2D_zero);
   }
 
   QUERY(
       ( write, Collision2D, c )
-    , ( read, Transform2D, t )
+    , ( read, alias_LocalToWorld2D, t )
     , ( filter, exclude, Body2D )
   ) {
     if(c->shape != NULL) {
@@ -245,7 +247,7 @@ static void _create_shapes(void) {
   QUERY(
       ( write, Collision2D, c )
     , ( write, Body2D, b )
-    , ( filter, exclude, Transform2D )
+    , ( filter, exclude, alias_LocalToWorld2D )
   ) {
     if(c->shape != NULL) {
       if(c->inactive) {
@@ -264,13 +266,13 @@ static void _create_shapes(void) {
     if(b == NULL || b->body == NULL) {
       return;
     }
-    _new_shape(entity, b, c, &Transform2D_zero);
+    _new_shape(entity, b, c, &alias_LocalToWorld2D_zero);
   }
 
   QUERY(
       ( write, Collision2D, c )
     , ( write, Body2D, b )
-    , ( read, Transform2D, t )
+    , ( read, alias_LocalToWorld2D, t )
   ) {
     if(c->shape != NULL) {
       if(c->inactive) {
@@ -369,7 +371,7 @@ static void _iterate(void) {
 
 static void _update_transform(void) {
   QUERY(
-      ( write, Transform2D, t )
+      ( write, alias_Translation2D, t )
     , ( read, Body2D, b )
   ) {
     if(b->body == NULL) {
@@ -377,9 +379,22 @@ static void _update_transform(void) {
     }
 
     cpVect p = cpBodyGetPosition(b->body);
-    t->position.x = p.x;
-    t->position.y = p.y;
-    t->angle = cpBodyGetAngle(b->body);
+
+    t->value.x = p.x;
+    t->value.y = p.y;
+  }
+
+  QUERY(
+      ( write, alias_Rotation2D, r )
+    , ( read, Body2D, b )
+  ) {
+    if(b->body == NULL) {
+      return;
+    }
+
+    cpFloat a = cpBodyGetAngle(b->body);
+
+    r->value = a;
   }
 }
 

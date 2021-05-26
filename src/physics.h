@@ -10,7 +10,7 @@ struct Physics_material {
   uint32_t category;
   float elasticity;
   float friction;
-  vector2 surface_velocity;
+  alias_Vector2D surface_velocity;
 };
 
 struct Physics_collision_data {
@@ -35,6 +35,20 @@ struct Physics_collision {
     bool (* begin)(struct Physics_begin_data * data, void * user_data);
   };
 };
+
+DECLARE_COMPONENT(Velocity2D, {
+  union {
+    struct {
+      float x;
+      float y;
+      float a;
+    };
+    struct {
+      alias_Vector2D velocity;
+      float angular_velocity;
+    };
+  };
+});
 
 DECLARE_COMPONENT(Body2D, {
   enum {
@@ -74,8 +88,8 @@ DECLARE_COMPONENT(Constraint2D, {
   } kind;
   Entity body_a;
   Entity body_b;
-  point2 anchor_a;
-  point2 anchor_b;
+  alias_Point2D anchor_a;
+  alias_Point2D anchor_b;
   float min;
   float max;
 
@@ -85,8 +99,8 @@ DECLARE_COMPONENT(Constraint2D, {
 
 DECLARE_COMPONENT(AddImpulse2D, {
   Entity body;
-  vector2 impulse;
-  point2 point;
+  alias_Vector2D impulse;
+  alias_Point2D point;
 });
 
 DECLARE_COMPONENT(Contact2D, {
@@ -100,8 +114,8 @@ DECLARE_COMPONENT(Contact2D, {
   Entity body_b;
   Entity shape_a;
   Entity shape_b;
-  vector2 velocity;
-  normal2 normal;
+  alias_Vector2D velocity;
+  alias_Vector2D normal;
 });
 
 cpSpace * physics_space(void);

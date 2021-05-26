@@ -1,35 +1,23 @@
 #pragma once
 
-#include "util.h"
-#include "math.h"
+#include <alias/transform.h>
 
-DECLARE_COMPONENT(Transform2D, {
-  union {
-    struct {
-      float x;
-      float y;
-      float a;
-    };
-    struct {
-      point2 position;
-      float angle;
-    };
-  };
-});
+extern alias_TransformBundle g_transform_bundle;
 
-static const struct Transform2D Transform2D_zero = { 0.0f, 0.0f, 0.0f };
+static const alias_LocalToWorld2D alias_LocalToWorld2D_zero = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
-DECLARE_COMPONENT(Velocity2D, {
-  union {
-    struct {
-      float x;
-      float y;
-      float a;
-    };
-    struct {
-      vector2 velocity;
-      float angular_velocity;
-    };
-  };
-});
+static inline alias_ecs_ComponentHandle alias_Translation2D_component(void) {
+  return g_transform_bundle.Translation2D_component;
+}
+
+static inline alias_ecs_ComponentHandle alias_Rotation2D_component(void) {
+  return g_transform_bundle.Rotation2D_component;
+}
+
+static inline alias_ecs_ComponentHandle alias_LocalToWorld2D_component(void) {
+  return g_transform_bundle.LocalToWorld2D_component;
+}
+
+void transform_init(void);
+void transform_update(void);
 

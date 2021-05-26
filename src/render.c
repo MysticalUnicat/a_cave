@@ -13,18 +13,19 @@ void render_frame(void) {
   ClearBackground(RAYWHITE);
 
   QUERY(
-      ( read, Transform2D, t )
+      ( read, alias_LocalToWorld2D, t )
     , ( read, DrawRectangle, r )
   ) {
-    DrawRectangle(t->position.x - r->width / 2.0f, t->position.y - r->height / 2.0f, r->width, r->height, r->color);
+    DrawRectangle(t->value._13 - r->width / 2.0f, t->value._23 - r->height / 2.0f, r->width, r->height, r->color);
   }
 
   QUERY(
-      ( read, Transform2D, t )
+      ( read, alias_LocalToWorld2D, t )
     , ( read, DrawCircle, c )
   ) {
-    DrawCircle(t->position.x, t->position.y, c->radius, c->color);
+    DrawCircle(t->value._13, t->value._23, c->radius, c->color);
   }
 
   EndDrawing();
 }
+

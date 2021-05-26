@@ -1,5 +1,9 @@
 #pragma once
 
+#include <alias/math.h>
+
+#if 0
+
 #include <stdbool.h>
 
 #define _GNU_SOURCE
@@ -259,4 +263,6 @@ static inline point2 multiply_matrix23_point2(matrix23 m, point2 p) {
     , matrix3: multiply_matrix3(A, B) \
     , matrix23: multiply_matrix23(A, B) \
     )
+
+#endif
 
