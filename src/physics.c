@@ -249,6 +249,7 @@ static void _create_shapes(void) {
     }
     struct Body2D * b = Body2D_write(c->body);
     if(b == NULL || b->body == NULL) {
+      ALIAS_ERROR("attempted to create a collision shape with an invalid body");
       return;
     }
     _new_shape(entity, b, c, t);
