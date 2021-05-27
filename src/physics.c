@@ -169,18 +169,10 @@ static void _new_shape(Entity entity, struct Body2D * b, struct Collision2D * c,
         };
       cpVect verts[4];
 
-      ALIAS_TRACE(".");
-
       // the verts need to be in local space of the body
       alias_Affine2D body_inverse_matrix = alias_construct_Affine2D_inverse(body_x, body_y, body_a);
-
-      ALIAS_TRACE(".");
       alias_Affine2D shape_matrix = t->value;
-
-      ALIAS_TRACE(".");
       alias_Affine2D m = alias_multiply_Affine2D_Affine2D(shape_matrix, body_inverse_matrix);
-
-      ALIAS_TRACE(".");
 
       for(uint32_t i = 0; i < 4; i++) {
         alias_Point2D p = alias_multiply_Affine2D_Point2D(m, box[i]);
@@ -236,7 +228,6 @@ static void _create_shapes(void) {
     , ( read, alias_LocalToWorld2D, t )
     , ( filter, exclude, Body2D )
   ) {
-    ALIAS_TRACE(".");
     if(c->shape != NULL) {
       if(c->inactive) {
         cpSpaceRemoveShape(physics_space(), c->shape);
