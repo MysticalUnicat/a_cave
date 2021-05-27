@@ -236,6 +236,7 @@ static void _create_shapes(void) {
     , ( read, alias_LocalToWorld2D, t )
     , ( filter, exclude, Body2D )
   ) {
+    ALIAS_TRACE(".");
     if(c->shape != NULL) {
       if(c->inactive) {
         cpSpaceRemoveShape(physics_space(), c->shape);
@@ -245,7 +246,6 @@ static void _create_shapes(void) {
       return;
     }
     if(c->inactive) {
-      ALIAS_ERROR("inactive shape");
       return;
     }
     struct Body2D * b = Body2D_write(c->body);
