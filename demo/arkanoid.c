@@ -138,13 +138,12 @@ static void _start_begin(void * ud) {
     , ( alias_Rotation2D, .value = 0.0f )
     , ( alias_Parent2D, .value = g.paddle )
     , ( DrawCircle, .radius = 7, .color = YELLOW )
+    );
+  SPAWN(
+      ( alias_Translation2D, .value.y = SCREEN_WIDTH / 20.0f )
+    , ( alias_Parent2D, .value = g.test_rotate )
     , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 2.0f, .color = BLACK )
     );
-  //SPAWN(
-  //    ( alias_Translation2D, .value.y = SCREEN_WIDTH / 20.0f )
-  //  , ( alias_Parent2D, .value = g.test_rotate )
-  //  , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 2.0f, .color = BLACK )
-  //  );
 
   int game_space_l = WALL_SIZE;
   int game_space_r = SCREEN_WIDTH - WALL_SIZE;
