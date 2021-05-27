@@ -29,6 +29,7 @@ struct {
   Entity ball;
   Entity hold_ball;
   Entity pin_constraint;
+  Entity test_rotate;
   int life;
 } g;
 
@@ -94,6 +95,8 @@ static void _playing_frame(void * ud) {
     _release_ball();
   }
 
+  alias_Rotation2D_write(g.test_rotate)->value = GetTime();
+
   Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 
   QUERY_EVENT(( read, Contact2D, c )) {
@@ -130,10 +133,15 @@ static void _start_begin(void * ud) {
               , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
               );
 
-  SPAWN(
+  g.test_rotate = SPAWN(
       ( alias_Translation2D, .value.x = 50.0f )
+    , ( alias_Rotation2D, .value = 0.0f )
     , ( alias_Parent2D, .value = g.paddle )
     , ( DrawCircle, .radius = 7, .color = YELLOW )
+    );
+  SPAWN(
+      ( alias_Translation2D, .value.y = 10.0f )
+    , ( alias_Parent2D, .value = g.test_rotate )
     );
 
   int game_space_l = WALL_SIZE;
@@ -226,10 +234,11 @@ int main(void) {
 
   while(!WindowShouldClose()) {
     event_update();
-    state_frame();
     transform_update();
     physics_update();
     render_frame();
+
+    state_frame();
   }
 }
 
