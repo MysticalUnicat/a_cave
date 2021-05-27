@@ -140,7 +140,7 @@ static void _start_begin(void * ud) {
     , ( DrawCircle, .radius = 7, .color = YELLOW )
     );
   SPAWN(
-      ( alias_Translation2D, .value.y = SCREEN_WIDTH / 20.0f )
+      ( alias_Translation2D, .value.x = SCREEN_WIDTH / 20.0f )
     , ( alias_Parent2D, .value = g.test_rotate )
     , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 2.0f, .color = BLACK )
     );
