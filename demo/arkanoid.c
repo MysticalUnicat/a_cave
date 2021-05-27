@@ -152,7 +152,7 @@ static void _start_begin(void * ud) {
     );
 
   g.test_rotate_2 = SPAWN(
-      ( alias_Translation2D, .value.x = arm_length )
+      ( alias_Translation2D, .value.x = arm_length * 2.0f )
     , ( alias_Rotation2D, .value = 0.0f )
     , ( alias_Parent2D, .value = g.test_rotate_1 )
     , ( DrawCircle, .radius = 7, .color = YELLOW )
@@ -164,7 +164,7 @@ static void _start_begin(void * ud) {
     );
 
   g.test_rotate_3 = SPAWN(
-      ( alias_Translation2D, .value.x = arm_length )
+      ( alias_Translation2D, .value.x = arm_length * 2.0f )
     , ( alias_Rotation2D, .value = 0.0f )
     , ( alias_Parent2D, .value = g.test_rotate_2 )
     , ( DrawCircle, .radius = 7, .color = YELLOW )
