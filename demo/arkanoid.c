@@ -97,9 +97,9 @@ static void _playing_frame(void * ud) {
     _release_ball();
   }
 
-  alias_Rotation2D_write(g.test_rotate_1)->value = GetTime() / 3.0f;
-  alias_Rotation2D_write(g.test_rotate_2)->value = GetTime() / 5.0f;
-  alias_Rotation2D_write(g.test_rotate_3)->value = GetTime() / 9.0f;
+  alias_Rotation2D_write(g.test_rotate_1)->value = GetTime() * 3.0f;
+  alias_Rotation2D_write(g.test_rotate_2)->value = GetTime() * 5.0f;
+  alias_Rotation2D_write(g.test_rotate_3)->value = GetTime() * 7.0f;
 
   Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 
