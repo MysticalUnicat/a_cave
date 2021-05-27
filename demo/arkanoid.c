@@ -120,13 +120,14 @@ static void _start_begin(void * ud) {
                 ( alias_Translation2D, .value.x = SCREEN_WIDTH / 2.0f, .value.y = SCREEN_HEIGHT * 7.0f / 8.0f )
               , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 20.0f, .color = BLACK )
               , ( Body2D, .kind = Body2D_kinematic )
-              , ( Collision2D, .collision_type = ct_paddle
-                             , .kind = Collision2D_box
-                             , .width = SCREEN_WIDTH / 10.0f
-                             , .height = 20.0f
-                             , .radius = 1.0f
-                             , .elasticity = 0.99
-                             )
+              , ( Collision2D,
+                  .collision_type = ct_paddle
+                , .kind = Collision2D_box
+                , .width = SCREEN_WIDTH / 10.0f
+                , .height = 20.0f
+                , .radius = 1.0f
+                , .elasticity = 0.99
+                )
               , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
               );
 
