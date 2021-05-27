@@ -245,6 +245,7 @@ static void _create_shapes(void) {
       return;
     }
     if(c->inactive) {
+      ALIAS_ERROR("inactive shape");
       return;
     }
     struct Body2D * b = Body2D_write(c->body);
