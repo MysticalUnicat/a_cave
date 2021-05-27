@@ -223,7 +223,7 @@ static void _create_shapes(void) {
     _new_shape(entity, b, c, &alias_LocalToWorld2D_zero);
   }
 
-  printf("no body collision + local to world\n");
+  printf("no body + local to world\n");
   QUERY(
       ( write, Collision2D, c )
     , ( read, alias_LocalToWorld2D, t )
@@ -248,6 +248,7 @@ static void _create_shapes(void) {
     _new_shape(entity, b, c, t);
   }
 
+  printf("body + no local to world\n");
   QUERY(
       ( write, Collision2D, c )
     , ( write, Body2D, b )
