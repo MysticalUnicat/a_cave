@@ -29,9 +29,6 @@ struct {
   Entity ball;
   Entity hold_ball;
   Entity pin_constraint;
-  Entity test_rotate_1;
-  Entity test_rotate_2;
-  Entity test_rotate_3;
   int life;
 } g;
 
@@ -97,10 +94,6 @@ static void _playing_frame(void * ud) {
     _release_ball();
   }
 
-  alias_Rotation2D_write(g.test_rotate_1)->value = GetTime() * 3.0f;
-  alias_Rotation2D_write(g.test_rotate_2)->value = GetTime() * 5.0f;
-  alias_Rotation2D_write(g.test_rotate_3)->value = GetTime() * 7.0f;
-
   Velocity2D_write(g.paddle)->x = (IsKeyDown(KEY_RIGHT) ? 500 : 0) - (IsKeyDown(KEY_LEFT) ? 500 : 0);
 
   QUERY_EVENT(( read, Contact2D, c )) {
@@ -138,42 +131,6 @@ static void _start_begin(void * ud) {
               );
 
   alias_R arm_length = 40.0f;
-
-  g.test_rotate_1 = SPAWN(
-      ( alias_Translation2D, .value.x = SCREEN_WIDTH / 10.0f )
-    , ( alias_Rotation2D, .value = 0.0f )
-    , ( alias_Parent2D, .value = g.paddle )
-    , ( DrawCircle, .radius = 7, .color = YELLOW )
-    );
-  SPAWN(
-      ( alias_Translation2D, .value.x = arm_length )
-    , ( alias_Parent2D, .value = g.test_rotate_1 )
-    , ( DrawRectangle, .width = arm_length, .height = 2.0f, .color = BLACK )
-    );
-
-  g.test_rotate_2 = SPAWN(
-      ( alias_Translation2D, .value.x = arm_length * 2.0f )
-    , ( alias_Rotation2D, .value = 0.0f )
-    , ( alias_Parent2D, .value = g.test_rotate_1 )
-    , ( DrawCircle, .radius = 7, .color = YELLOW )
-    );
-  SPAWN(
-      ( alias_Translation2D, .value.x = arm_length )
-    , ( alias_Parent2D, .value = g.test_rotate_2 )
-    , ( DrawRectangle, .width = arm_length, .height = 2.0f, .color = BLACK )
-    );
-
-  g.test_rotate_3 = SPAWN(
-      ( alias_Translation2D, .value.x = arm_length * 2.0f )
-    , ( alias_Rotation2D, .value = 0.0f )
-    , ( alias_Parent2D, .value = g.test_rotate_2 )
-    , ( DrawCircle, .radius = 7, .color = YELLOW )
-    );
-  SPAWN(
-      ( alias_Translation2D, .value.x = arm_length )
-    , ( alias_Parent2D, .value = g.test_rotate_3 )
-    , ( DrawRectangle, .width = arm_length, .height = 2.0f, .color = BLACK )
-    );
 
   int game_space_l = WALL_SIZE;
   int game_space_r = SCREEN_WIDTH - WALL_SIZE;
