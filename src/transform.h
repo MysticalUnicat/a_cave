@@ -18,6 +18,10 @@ static inline alias_ecs_ComponentHandle alias_LocalToWorld2D_component(void) {
   return g_transform_bundle.LocalToWorld2D_component;
 }
 
+static inline alias_ecs_ComponentHandle alias_Parent2D_component(void) {
+  return g_transform_bundle.Parent2D_component;
+}
+
 void transform_init(void);
 void transform_update(void);
 

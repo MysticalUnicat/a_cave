@@ -130,6 +130,12 @@ static void _start_begin(void * ud) {
               , ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
               );
 
+  SPAWN(
+      ( alias_Translation2D, .value.x = 50.0f )
+    , ( alias_Parent2D, .value = g.paddle )
+    , ( DrawCircle, .radius = 7, .color = YELLOW )
+    );
+
   int game_space_l = WALL_SIZE;
   int game_space_r = SCREEN_WIDTH - WALL_SIZE;
   int game_space_t = WALL_SIZE;
