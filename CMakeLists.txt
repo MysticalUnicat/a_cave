@@ -26,7 +26,7 @@ add_library(a_engine
 )
 target_link_libraries(a_engine alias raylib chipmunk_static)
 
-add_executable(arkanoid demo/arkanoid.c)
+add_executable(arkanoid demo/arkanoid_2.c)
 target_link_libraries(arkanoid a_engine)
 
 add_executable(asteroids demo/asteroids.c)
