@@ -8,6 +8,6 @@ void transform_init(void) {
 }
 
 void transform_update(void) {
-  alias_transform_update2d_serial(g_world, &g_transform_bundle);
+  // alias_transform_update2d_serial(g_world, &g_transform_bundle);
 }
 
