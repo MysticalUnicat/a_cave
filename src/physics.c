@@ -1,5 +1,7 @@
 #include "physics.h"
 
+#include <raylib.h>
+
 #if PHYSICS_USE_ALIAS
 alias_Physics2DBundle g_physics_bundle;
 
@@ -27,6 +29,8 @@ void physics_transform_update(alias_R speed) {
     alias_transform_update2d_serial(g_world, &g_transform_bundle);
 
     alias_physics_update2d_serial_post_transform(g_world, &g_physics_bundle, timestep);
+
+    p_time += timestep;
   }
 }
 #else
