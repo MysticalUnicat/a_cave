@@ -17,6 +17,10 @@ void physics_transform_update(alias_R speed) {
 
   s_time += GetFrameTime() * speed;
 
+  if(p_time >= s_time) {
+    alias_transform_update2d_serial(g_world, &g_transform_bundle);
+  }
+
   while(p_time < s_time) {
     alias_physics_update2d_serial_pre_transform(g_world, &g_physics_bundle, timestep);
 
