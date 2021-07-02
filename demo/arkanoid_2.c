@@ -123,6 +123,7 @@ struct State playing = {
 static void _start_begin(void * ud) {
   g.paddle = SPAWN(
                 ( alias_Translation2D, .value.x = SCREEN_WIDTH / 2.0f, .value.y = SCREEN_HEIGHT * 7.0f / 8.0f )
+              , ( alias_Physics2DLinearMotion, .damping = 0.995f )
               , ( DrawRectangle, .width = SCREEN_WIDTH / 10.0f, .height = 20.0f, .color = BLACK )
               //, ( Body2D, .kind = Body2D_kinematic )
               //, ( Collision2D,
@@ -134,7 +135,6 @@ static void _start_begin(void * ud) {
               //  , .elasticity = 0.99
               //  )
               //, ( Velocity2D, .x = 0.0f, .y = 0.0f, .a = 0.0f )
-              , ( alias_Physics2DLinearMotion, .damping = 0.995f )
               );
 
   alias_R arm_length = 40.0f;
