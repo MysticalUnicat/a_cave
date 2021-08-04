@@ -11,7 +11,7 @@
 
 #define Entity alias_ecs_EntityHandle
 
-extern alias_ecs_Instance * g_world;
+extern alias_ecs_Instance * Engine_ecs(void);
 
 #define LAZY_GLOBAL(TYPE, IDENT, ...) \
   TYPE IDENT (void) {                 \
@@ -51,16 +51,16 @@ extern alias_ecs_Instance * g_world;
   LAZY_GLOBAL(                                                                                                 \
     alias_ecs_ComponentHandle,                                                                                 \
     IDENT##_component,                                                                                         \
-    ECS(register_component, g_world, &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
+    ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
   )                                                                                                            \
   const struct IDENT * IDENT##_read(Entity entity) {                                                           \
     const struct IDENT * ptr;                                                                                  \
-    alias_ecs_read_entity_component(g_world, entity, IDENT##_component(), (const void **)&ptr);                \
+    alias_ecs_read_entity_component(Engine_ecs(), entity, IDENT##_component(), (const void **)&ptr);                \
     return ptr;                                                                                                \
   }                                                                                                            \
   struct IDENT * IDENT##_write(Entity entity) {                                                                \
     struct IDENT * ptr;                                                                                        \
-    alias_ecs_write_entity_component(g_world, entity, IDENT##_component(), (void **)&ptr);                     \
+    alias_ecs_write_entity_component(Engine_ecs(), entity, IDENT##_component(), (void **)&ptr);                     \
     return ptr;                                                                                                \
   }
 
@@ -71,7 +71,7 @@ extern alias_ecs_Instance * g_world;
   LAZY_GLOBAL(                                                                              \
     alias_ecs_ComponentHandle,                                                              \
     IDENT##_component,                                                                      \
-    ECS(register_component, g_world, &(alias_ecs_ComponentCreateInfo) { .size = 0 }, &inner); \
+    ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = 0 }, &inner); \
   )
 
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
@@ -81,7 +81,7 @@ extern alias_ecs_Instance * g_world;
   alias_ecs_EntitySpawnComponent _components[] = {                  \
     MAP(SPAWN_COMPONENT, __VA_ARGS__)                               \
   };                                                                \
-  ECS(spawn, g_world, &(alias_ecs_EntitySpawnInfo) {                  \
+  ECS(spawn, Engine_ecs(), &(alias_ecs_EntitySpawnInfo) {                  \
     .layer = ALIAS_ECS_INVALID_LAYER,                               \
     .count = 1,                                                     \
     .num_components = sizeof(_components) / sizeof(_components[0]), \
@@ -154,7 +154,7 @@ extern alias_ecs_Instance * g_world;
     alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
     alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
     alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
-    alias_ecs_create_query(g_world, &(alias_ecs_QueryCreateInfo) { \
+    alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
       .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
       .write_components = _wlist, \
       .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
@@ -177,7 +177,7 @@ extern alias_ecs_Instance * g_world;
     EACH_INJECT \
     CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__)); \
   } \
-  alias_ecs_execute_query(g_world, CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL }); \
+  alias_ecs_execute_query(Engine_ecs(), CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL }); \
   POST_INJECT \
   auto void CAT(query_fn_, __LINE__) \
     ( void * ud \
