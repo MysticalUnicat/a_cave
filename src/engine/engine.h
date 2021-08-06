@@ -257,4 +257,26 @@ DECLARE_COMPONENT(DrawText, {
   Color color;
 })
 
+// hud
+DECLARE_COMPONENT(HudTransform, {
+  alias_Vector2D offset;
+  alias_R width;
+  alias_R height;
+})
+
+DECLARE_COMPONENT(HudAnchor, {
+  alias_Vector2D min;
+  alias_Vector2D max;
+})
+
+DECLARE_COMPONENT(HudParent, {
+  Entity parent;
+})
+
+DECLARE_COMPONENT(HudText, {
+  const char * text;
+  float size;
+  Color color;
+})
+
 #endif

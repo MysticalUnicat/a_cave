@@ -1,8 +1,6 @@
 #pragma once
 
-//#include "input.c"
-
-//#include "start.c"
+#include "start.c"
 
 struct {
   Entity text;
@@ -12,14 +10,12 @@ void _intro_begin(void * ud) {
   (void)ud;
 
   _intro.text = SPAWN(
-      ( alias_Translation2D, .value.x = SCREEN_WIDTH / 3, .value.y = SCREEN_HEIGHT/2 - 40 )
-    , ( DrawText, .text = "A CAVE", .size = 40, .color = GRAY )
+      ( alias_Translation2D, .value.x = SCREEN_WIDTH / 2, .value.y = SCREEN_HEIGHT/2 - 40 )
+    , ( DrawText, .text = "aRPG", .size = 40, .color = GRAY )
     );
 }
 
 void _intro_frame(void * ud) {
-  //extern struct State playing;
-
   if(menu_back.value) {
     Engine_pop_state();
     return;
@@ -27,11 +23,9 @@ void _intro_frame(void * ud) {
 
   if(menu_forward.value) {
     Engine_pop_state();
-    //Engine_push_state(&start_state);
+    Engine_push_state(&start_state);
     return;
   }
-
-  //DrawText("A CAVE", SCREEN_WIDTH / 2 - MeasureText("A CAVE", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
 }
 
 void _intro_end(void * ud) {

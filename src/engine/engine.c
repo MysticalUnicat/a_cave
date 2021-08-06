@@ -234,6 +234,8 @@ static void _update_input(void) {
     [Mouse_Left_Button] =     MOUSE_LEFT_BUTTON,
     [Mouse_Right_Button] =    MOUSE_RIGHT_BUTTON
   };
+
+  alias_memory_clear(_input_bindings, sizeof(*_input_bindings) * _input_binding_count);
   
   for(uint32_t i = 0; i < _input_backend_pair_count; i++) {
     enum InputSource source = _input_backend_pairs[i].source;
@@ -241,10 +243,14 @@ static void _update_input(void) {
 
     switch(source) {
     case Keyboard_Apostrophe ... Keyboard_Pad_Equal:
-      *binding = IsKeyDown(_to_raylib[source]) ? alias_R_ONE : alias_R_ZERO;
+      if(IsKeyDown(_to_raylib[source])) {
+        *binding = alias_R_ONE;
+      }
       break;
     case Mouse_Left_Button ... Mouse_Right_Button:
-      *binding = IsMouseButtonDown(_to_raylib[source]) ? alias_R_ONE : alias_R_ZERO;
+      if(IsMouseButtonDown(_to_raylib[source])) {
+        *binding = alias_R_ONE;
+      }
       break;
     case Mouse_Position_X:
       *binding = GetMouseX();
@@ -367,6 +373,8 @@ DEFINE_COMPONENT(DrawCircle)
 
 DEFINE_COMPONENT(DrawText)
 
+static void _update_hud(void);
+
 static void _update_display(void) {
   BeginDrawing();
 
@@ -415,6 +423,20 @@ static void _update_display(void) {
     DrawText(t->text, w->value._13, w->value._23, t->size, t->color);
   }
 
+  _update_hud();
+
   EndDrawing();
 }
 
+// hud
+DEFINE_COMPONENT(HudTransform)
+
+DEFINE_COMPONENT(HudAnchor)
+
+DEFINE_COMPONENT(HudParent)
+
+DEFINE_COMPONENT(HudText)
+
+static void _update_hud(void) {
+  
+}

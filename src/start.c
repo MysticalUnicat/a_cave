@@ -1,11 +1,11 @@
 #pragma once
 
-#include "playing.c"
+// #include "playing.c"
 
 void _start_begin(void * ud) {
-  g.physics_speed = 1.0f;
-  state_pop();
-  state_push(&playing_state);
+  Engine_set_physics_speed(alias_R_ONE);
+  Engine_pop_state();
+  // Engine_push_state(&playing_state);
 }
 
 struct State start_state = {

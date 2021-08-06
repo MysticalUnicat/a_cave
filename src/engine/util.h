@@ -47,11 +47,11 @@ extern alias_ecs_Instance * Engine_ecs(void);
   const struct IDENT * IDENT##_read(Entity entity);  \
   struct IDENT * IDENT##_write(Entity entity);
 
-#define DEFINE_COMPONENT(IDENT)                                                                         \
+#define DEFINE_COMPONENT(IDENT, ...)                                                                         \
   LAZY_GLOBAL(                                                                                                 \
     alias_ecs_ComponentHandle,                                                                                 \
     IDENT##_component,                                                                                         \
-    ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT) }, &inner); \
+    ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT), ## __VA_ARGS__ }, &inner); \
   )                                                                                                            \
   const struct IDENT * IDENT##_read(Entity entity) {                                                           \
     const struct IDENT * ptr;                                                                                  \
