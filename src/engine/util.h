@@ -2,7 +2,7 @@
 #define _UTIL_H_
 
 #include <alias/ecs.h>
-#include <raylib.h>
+//#include <raylib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
@@ -214,4 +214,3 @@ void CmdBuf_end_recording(struct CmdBuf * cbuf);
 void CmdBuf_execute(struct CmdBuf * cbuf, alias_ecs_Instance * instance);
 
 #endif // _UTIL_H_
-

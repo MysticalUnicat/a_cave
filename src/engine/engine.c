@@ -1,6 +1,36 @@
 #include "engine.h"
 
+#define USE_UV 1
+
+// why does this not put things in a namespace?!
+#define Image raylib_Image
+#define Color raylib_Color
 #include <raylib.h>
+#undef Image
+#undef Color
+
+const struct Color Color_WHITE = (struct Color) { 255, 255, 255, 255 };
+const struct Color Color_GRAY = (struct Color) { 130, 130, 130, 255 };
+const struct Color Color_BLACK = (struct Color) { 0, 0, 0, 255 };
+const struct Color Color_TRANSPARENT_BLACK = (struct Color) { 0, 0, 0, 0 };
+
+const struct Color Color_RAYWHITE = (struct Color) { 245, 245, 245, 255 };
+
+static inline raylib_Color Color_to_raylib_Color(struct Color c) {
+  return (raylib_Color) { c.r, c.g, c.b, c.a };
+}
+
+
+#if USE_UV
+#include <uv.h>
+
+static uv_loop_t _loop;
+static uv_run_mode _loop_mode;
+static uv_timer_t _frame_timer;
+static bool _running;
+
+static inline void _frame_timer_f(uv_timer_t * t);
+#endif
 
 static alias_ecs_Instance * _ecs;
 static alias_R _physics_speed;
@@ -8,8 +38,18 @@ static struct State * _current_state;
 
 void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * title, struct State * initial_state) {
   InitWindow(screen_width, screen_height, title);
-  SetTargetFPS(60);
   SetExitKey('Q');
+
+#if USE_UV
+  uv_loop_init(&_loop);
+  _loop_mode = UV_RUN_NOWAIT;
+  _running = true;
+
+  uv_timer_init(&_loop, &_frame_timer);
+  uv_timer_start(&_frame_timer, _frame_timer_f, 0, 16);
+#else
+  SetTargetFPS(60);
+#endif
 
   alias_ecs_create_instance(NULL, &_ecs);
 
@@ -25,18 +65,42 @@ static bool _update_state(void);
 static void _update_physics(void);
 static void _update_display(void);
 
-bool Engine_update(void) {
+static bool _update(void) {
   _update_physics();
   _update_display();
   if(WindowShouldClose()) {
     return false;
   }
-
   _update_input();
   _update_events();
-
   return _update_state();
 }
+
+#if USE_UV
+bool Engine_update(void) {
+  if(uv_run(&_loop, _loop_mode) == 0) {
+    _running = false;
+  }
+  return _running;
+}
+static inline void _frame_timer_f(uv_timer_t * t) {
+  if(!_update()) {
+    _running = false;
+  }
+
+  if(_running) {
+    uv_timer_again(t);
+    _loop_mode = UV_RUN_ONCE;
+  } else {
+    uv_timer_stop(&_frame_timer);
+    _loop_mode = UV_RUN_NOWAIT;
+  }
+}
+#else
+bool Engine_update(void) {
+  return _update();
+}
+#endif
 
 // state
 void Engine_push_state(struct State * state) {
@@ -104,14 +168,15 @@ void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count,
     }
   }
 
-  if(max_binding_index > _input_binding_count) {
+  if(max_binding_index + 1 > _input_binding_count) {
     _input_bindings = alias_realloc(
         alias_default_MemoryCB()
       , _input_bindings
       , sizeof(*_input_bindings) * _input_binding_count
-      , sizeof(*_input_bindings) * max_binding_index
+      , sizeof(*_input_bindings) * (max_binding_index + 1)
       , alignof(*_input_bindings)
       );
+    _input_binding_count = max_binding_index + 1;
   }
 }
 
@@ -236,7 +301,7 @@ static void _update_input(void) {
   };
 
   alias_memory_clear(_input_bindings, sizeof(*_input_bindings) * _input_binding_count);
-  
+
   for(uint32_t i = 0; i < _input_backend_pair_count; i++) {
     enum InputSource source = _input_backend_pairs[i].source;
     alias_R * binding = &_input_bindings[_input_backend_pairs[i].binding];
@@ -345,7 +410,7 @@ void Engine_set_physics_speed(alias_R speed) {
 
 static void _update_physics(void) {
   const float timestep = 1.0f / 60.0f;
-  
+
   static float p_time = 0.0f;
   static float s_time = 0.0f;
 
@@ -378,7 +443,7 @@ static void _update_hud(void);
 static void _update_display(void) {
   BeginDrawing();
 
-  ClearBackground(RAYWHITE);
+  ClearBackground(Color_to_raylib_Color(Color_RAYWHITE));
 
   QUERY(
       ( read, alias_LocalToWorld2D, t )
@@ -405,22 +470,22 @@ static void _update_display(void) {
     box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
     box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
 
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], r->color);
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], r->color);
+    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], Color_to_raylib_Color(r->color));
+    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], Color_to_raylib_Color(r->color));
   }
 
   QUERY(
       ( read, alias_LocalToWorld2D, t )
     , ( read, DrawCircle, c )
   ) {
-    DrawCircle(t->value._13, t->value._23, c->radius, c->color);
+    DrawCircle(t->value._13, t->value._23, c->radius, Color_to_raylib_Color(c->color));
   }
 
   QUERY(
       ( read, alias_LocalToWorld2D, w )
     , ( read, DrawText, t )
   ) {
-    DrawText(t->text, w->value._13, w->value._23, t->size, t->color);
+    DrawText(t->text, w->value._13, w->value._23, t->size, Color_to_raylib_Color(t->color));
   }
 
   _update_hud();
@@ -438,5 +503,5 @@ DEFINE_COMPONENT(HudParent)
 DEFINE_COMPONENT(HudText)
 
 static void _update_hud(void) {
-  
+
 }

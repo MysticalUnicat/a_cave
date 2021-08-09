@@ -1,0 +1,9 @@
+[submodule "ext/raylib"]
+	path = ext/raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "ext/alias"]
+	path = ext/alias
+	url = https://github.com/MysticalUnicat/alias
+[submodule "ext/libuv"]
+	path = ext/libuv
+	url = https://github.com/libuv/libuv.git

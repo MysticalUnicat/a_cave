@@ -35,7 +35,7 @@ void Engine_pop_state(void);
 alias_ecs_Instance * Engine_ecs(void);
 
 alias_R Engine_physics_speed(void);
-void Engine_set_engine_speed(alias_R speed);
+void Engine_set_physics_speed(alias_R speed);
 
 // input
 enum InputSource {
@@ -240,21 +240,47 @@ static inline alias_ecs_ComponentHandle alias_Physics2DLinearMass_component(void
 }
 
 // render
+struct Image {
+  const char * path;
+  void * loaded;
+};
+
+struct Color {
+  union {
+    struct {
+      uint8_t r;
+      uint8_t g;
+      uint8_t b;
+      uint8_t a;
+    };
+    uint32_t cpu_endian;
+  };
+};
+
+extern const struct Color Color_WHITE;
+extern const struct Color Color_GRAY;
+extern const struct Color Color_BLACK;
+extern const struct Color Color_TRANSPARENT_BLACK;
+
+static inline uint32_t Color_rgba_u32(struct Color c) {
+  return c.cpu_endian;
+}
+
 DECLARE_COMPONENT(DrawRectangle, {
   float width;
   float height;
-  Color color;
+  struct Color color;
 })
 
 DECLARE_COMPONENT(DrawCircle, {
   float radius;
-  Color color;
+  struct Color color;
 })
 
 DECLARE_COMPONENT(DrawText, {
   const char * text;
   float size;
-  Color color;
+  struct Color color;
 })
 
 // hud
@@ -276,7 +302,7 @@ DECLARE_COMPONENT(HudParent, {
 DECLARE_COMPONENT(HudText, {
   const char * text;
   float size;
-  Color color;
+  struct Color color;
 })
 
 #endif

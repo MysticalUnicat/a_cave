@@ -39,5 +39,6 @@ int main(void) {
   });
 
   while(Engine_update()) {
+    printf(".");
   }
 }

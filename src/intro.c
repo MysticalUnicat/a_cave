@@ -11,11 +11,13 @@ void _intro_begin(void * ud) {
 
   _intro.text = SPAWN(
       ( alias_Translation2D, .value.x = SCREEN_WIDTH / 2, .value.y = SCREEN_HEIGHT/2 - 40 )
-    , ( DrawText, .text = "aRPG", .size = 40, .color = GRAY )
+    , ( DrawText, .text = "aRPG", .size = 40, .color = Color_GRAY )
     );
 }
 
 void _intro_frame(void * ud) {
+  (void)ud;
+
   if(menu_back.value) {
     Engine_pop_state();
     return;
@@ -29,6 +31,8 @@ void _intro_frame(void * ud) {
 }
 
 void _intro_end(void * ud) {
+  (void)ud;
+
   alias_ecs_despawn(Engine_ecs(), 1, &_intro.text);
 }
 

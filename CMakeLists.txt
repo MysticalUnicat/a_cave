@@ -5,6 +5,7 @@ project(a_cave LANGUAGES C)
 
 add_subdirectory(ext/alias)
 add_subdirectory(ext/raylib)
+add_subdirectory(ext/libuv)
 
 add_library(a_engine
   src/engine/cbuf.c
@@ -16,7 +17,7 @@ add_library(a_engine
   # src/engine/physics.c
   src/engine/engine.c
 )
-target_link_libraries(a_engine alias raylib)
+target_link_libraries(a_engine alias raylib uv_a)
 
 add_executable(a_cave src/main.c)
 target_link_libraries(a_cave a_engine)
