@@ -180,13 +180,35 @@ void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count,
   }
 }
 
-static uint32_t _input_frontend_signal_count = 0;
-static union InputSignal * * _input_frontend_signals = NULL;
+static struct {
+  uint32_t count;
+  union InputSignal * * signals;
+} _input_frontends[MAX_INPUT_FRONTEND_SETS] = { 0 };
 
-void Engine_set_player_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals) {
+uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals) {
   (void)player_index;
-  _input_frontend_signal_count = signal_count;
-  _input_frontend_signals = signals;
+
+  uint32_t index = 0;
+  for(; index < MAX_INPUT_FRONTEND_SETS; index++) {
+    if(_input_frontends[index].count == 0) {
+      break;
+    }
+  }
+  if(index < MAX_INPUT_FRONTEND_SETS) {
+    _input_frontends[index].count = signal_count;
+    _input_frontends[index].signals = signals;
+    return index;
+  }
+  return -1;
+}
+
+void Engine_remove_input_frontend(uint32_t player_index, uint32_t index) {
+  (void)player_index;
+
+  if(index < MAX_INPUT_FRONTEND_SETS) {
+    _input_frontends[index].count = 0;
+    _input_frontends[index].signals = NULL;
+  }
 }
 
 static void _update_input(void) {
@@ -326,22 +348,30 @@ static void _update_input(void) {
     }
   }
 
-  for(uint32_t i = 0; i < _input_frontend_signal_count; i++) {
-    switch(_input_frontend_signals[i]->type) {
-    case InputSignal_Up:
-      {
-        struct InputSignalUp * signal = &_input_frontend_signals[i]->up;
-        bool value = _input_bindings[signal->binding] > alias_R_ZERO;
-        signal->value = signal->_internal_1 == false && value;
-        signal->_internal_1 = value;
-        break;
-      }
-    case InputSignal_Vector2D:
-      {
-        struct InputSignalVector2D * signal = &_input_frontend_signals[i]->vector2d;
-        signal->value.x = _input_bindings[signal->binding_x];
-        signal->value.y = _input_bindings[signal->binding_y];
-        break;
+  for(uint32_t i = 0; i < MAX_INPUT_FRONTEND_SETS; i++) {
+    for(uint32_t j = 0; j < _input_frontends[i].count; j++) {
+      union InputSignal * signal = _input_frontends[i].signals[j];
+      switch(signal->type) {
+      case InputSignal_Up:
+        {
+          bool value = _input_bindings[signal->up.binding] > alias_R_ZERO;
+          signal->up.value = !signal->up._internal_1 && value;
+          signal->up._internal_1 = value;
+          break;
+        }
+      case InputSignal_Down:
+        {
+          bool value = _input_bindings[signal->up.binding] > alias_R_ZERO;
+          signal->up.value = signal->up._internal_1 && !value;
+          signal->up._internal_1 = value;
+          break;
+        }
+      case InputSignal_Vector2D:
+        {
+          signal->vector2d.value.x = _input_bindings[signal->vector2d.binding_x];
+          signal->vector2d.value.y = _input_bindings[signal->vector2d.binding_y];
+          break;
+        }
       }
     }
   }

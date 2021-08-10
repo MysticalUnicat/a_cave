@@ -1,6 +1,6 @@
 #pragma once
 
-#include "start.c"
+#include "playing.c"
 
 struct {
   Entity text;
@@ -25,7 +25,7 @@ void _intro_frame(void * ud) {
 
   if(menu_forward.value) {
     Engine_pop_state();
-    Engine_push_state(&start_state);
+    Engine_push_state(&playing_state);
     return;
   }
 }

@@ -10,6 +10,9 @@
 
 #include "util.h"
 
+// parameters
+#define MAX_INPUT_FRONTEND_SETS 8
+
 // Engine is the only 'singleton'
 struct State {
   struct State * prev;
@@ -160,6 +163,7 @@ struct InputBackendPair {
 
 enum InputSignalType {
   InputSignal_Up,
+  InputSignal_Down,
   InputSignal_Vector2D
 };
 
@@ -170,6 +174,17 @@ struct InputSignalUp {
   bool _internal_1;
 };
 
+#define INPUT_SIGNAL_UP(BINDING) (struct InputSignalUp) { .type = InputSignal_Up, .binding = BINDING }
+
+struct InputSignalDown {
+  enum InputSignalType type;
+  bool value;
+  uint32_t binding;
+  bool _internal_1;
+};
+
+#define INPUT_SIGNAL_DOWN(BINDING) (struct InputSignalDown) { .type = InputSignal_Down, .binding = BINDING }
+
 struct InputSignalVector2D {
   enum InputSignalType type;
   alias_Vector2D value;
@@ -177,14 +192,19 @@ struct InputSignalVector2D {
   uint32_t binding_y;
 };
 
+#define INPUT_SIGNAL_VECTOR2D(BINDING_X, BINDING_Y) (struct InputSignalVector2D) { .type = InputSignal_Down, .binding_x = BINDING_X, .binding_y = BINDING_Y }
+
 union InputSignal {
   enum InputSignalType type;
   struct InputSignalUp up;
+  struct InputSignalDown down;
   struct InputSignalVector2D vector2d;
 };
 
 void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count, const struct InputBackendPair * pairs);
-void Engine_set_player_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals);
+
+uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals);
+void Engine_remove_input_frontend(uint32_t player_index, uint32_t index);
 
 // event
 DECLARE_COMPONENT(Event, {
@@ -261,6 +281,15 @@ extern const struct Color Color_WHITE;
 extern const struct Color Color_GRAY;
 extern const struct Color Color_BLACK;
 extern const struct Color Color_TRANSPARENT_BLACK;
+
+static inline struct Color Color_from_rgb_u8(uint8_t r, uint8_t g, uint8_t b) {
+  return (struct Color) {
+      .r = r
+    , .g = g
+    , .b = b
+    , .a = 255
+  };
+}
 
 static inline uint32_t Color_rgba_u32(struct Color c) {
   return c.cpu_endian;

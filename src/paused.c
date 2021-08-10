@@ -1,22 +1,37 @@
 #pragma once
 
+struct {
+  struct InputSignalDown unpause;
+  uint32_t input;
+} _paused = {
+  .unpause = INPUT_SIGNAL_DOWN(Binding_Pause)
+};
+
+union InputSignal * _paused_signals[] = {
+  (union InputSignal *)&_paused.unpause
+};
+
 void _paused_begin(void * ud) {
-  g.physics_speed = 0.0f;
+  (void)ud;
+
+  Engine_set_physics_speed(0.01);
 }
 
 void _paused_frame(void * ud) {
-  extern struct State playing;
+  (void)ud;
 
-  if(IsKeyPressed('P')) {
-    state_pop();
+  if(_paused.unpause.value || menu_back.value) {
+    Engine_pop_state();
     return;
   }
 
-  DrawText("GAME PAUSED", SCREEN_WIDTH / 2 - MeasureText("GAME PAUSED", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
+  // DrawText("GAME PAUSED", SCREEN_WIDTH / 2 - MeasureText("GAME PAUSED", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
 }
 
 void _paused_end(void * ud) {
-  g.physics_speed = 1.0f;
+  (void)ud;
+
+  Engine_set_physics_speed(alias_R_ONE);
 }
 
 struct State paused_state = {
