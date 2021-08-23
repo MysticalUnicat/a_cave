@@ -6,6 +6,7 @@ struct {
   struct InputSignalUp pause;
   uint32_t input;
 
+  Entity camera;
   Entity player;
 } _playing = {
   .pause = INPUT_SIGNAL_UP(Binding_Pause)
@@ -22,6 +23,10 @@ void _playing_begin(void * ud) {
 
   _playing.player = SPAWN( ( alias_Translation2D, .value.x = 0, .value.y = 0 )
                          , ( DrawCircle, .radius = 5, .color = Color_from_rgb_u8(100, 100, 255) )
+                         );
+
+  _playing.camera = SPAWN( ( alias_Parent2D, .value = _playing.player )
+                         , ( Camera, .viewport_max = { alias_R_ONE, alias_R_ONE }, .zoom = alias_R_ONE )
                          );
 }
 

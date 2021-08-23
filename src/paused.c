@@ -25,7 +25,10 @@ void _paused_frame(void * ud) {
     return;
   }
 
-  // DrawText("GAME PAUSED", SCREEN_WIDTH / 2 - MeasureText("GAME PAUSED", 40) / 2, SCREEN_HEIGHT/2 - 40, 40, GRAY);
+  Engine_ui_center();
+    Engine_ui_font_size(40);
+    Engine_ui_font_color(Color_GRAY);
+    Engine_ui_text("GAME PAUSED");
 }
 
 void _paused_end(void * ud) {

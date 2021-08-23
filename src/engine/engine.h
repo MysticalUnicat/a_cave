@@ -20,6 +20,7 @@ struct State {
   void (*begin)(void * ud);
   void (*frame)(void * ud);
   void (*background)(void * ud);
+  void (*hud)(void * ud);
   void (*pause)(void * ud);
   void (*unpause)(void * ud);
   void (*end)(void * ud);
@@ -295,6 +296,14 @@ static inline uint32_t Color_rgba_u32(struct Color c) {
   return c.cpu_endian;
 }
 
+DECLARE_COMPONENT(Camera, {
+  alias_Vector2D viewport_min;
+  alias_Vector2D viewport_max;
+  alias_R zoom;
+})
+
+#define Camera_DEFAULT (struct Camera) { .viewport_max = { alias_R_ONE, alias_R_ONE }, .zoom = alias_R_ONE }
+
 DECLARE_COMPONENT(DrawRectangle, {
   float width;
   float height;
@@ -313,25 +322,5 @@ DECLARE_COMPONENT(DrawText, {
 })
 
 // hud
-DECLARE_COMPONENT(HudTransform, {
-  alias_Vector2D offset;
-  alias_R width;
-  alias_R height;
-})
-
-DECLARE_COMPONENT(HudAnchor, {
-  alias_Vector2D min;
-  alias_Vector2D max;
-})
-
-DECLARE_COMPONENT(HudParent, {
-  Entity parent;
-})
-
-DECLARE_COMPONENT(HudText, {
-  const char * text;
-  float size;
-  struct Color color;
-})
 
 #endif

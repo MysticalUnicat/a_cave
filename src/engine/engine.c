@@ -35,8 +35,13 @@ static inline void _frame_timer_f(uv_timer_t * t);
 static alias_ecs_Instance * _ecs;
 static alias_R _physics_speed;
 static struct State * _current_state;
+static uint32_t _screen_width;
+static uint32_t _screen_height;
 
 void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * title, struct State * initial_state) {
+  _screen_width = screen_width;
+  _screen_height = screen_height;
+
   InitWindow(screen_width, screen_height, title);
   SetExitKey('Q');
 
@@ -462,6 +467,8 @@ static void _update_physics(void) {
 }
 
 // render
+DEFINE_COMPONENT(Camera)
+
 DEFINE_COMPONENT(DrawRectangle)
 
 DEFINE_COMPONENT(DrawCircle)
@@ -476,46 +483,68 @@ static void _update_display(void) {
   ClearBackground(Color_to_raylib_Color(Color_RAYWHITE));
 
   QUERY(
-      ( read, alias_LocalToWorld2D, t )
-    , ( read, DrawRectangle, r )
+      ( read, alias_LocalToWorld2D, transform )
+    , ( read, Camera, camera )
   ) {
-    alias_R
-        hw = r->width / 2
-      , hh = r->height / 2
-      , bl = -hw
-      , br =  hw
-      , bt = -hh
-      , bb =  hh
-      ;
+    int x = camera->viewport_min.x * _screen_width;
+    int y = camera->viewport_min.y * _screen_height;
+    int width = (camera->viewport_max.x * _screen_width) - x;
+    int height = (camera->viewport_max.y * _screen_height) - y;
 
-    alias_Point2D box[] = {
-        { br, bb }
-      , { br, bt }
-      , { bl, bt }
-      , { bl, bb }
-      };
+    BeginScissorMode(x, y, width, height);
 
-    box[0] = alias_multiply_Affine2D_Point2D(t->value, box[0]);
-    box[1] = alias_multiply_Affine2D_Point2D(t->value, box[1]);
-    box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
-    box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
+    BeginMode2D((Camera2D) {
+      .offset = { 0.0f, 0.0f },                                 // Camera offset (displacement from target)
+      .target = { transform->value._13, transform->value._23 }, // Camera target (rotation and zoom origin)
+      .rotation = 0.0f,                                         // Camera rotation in degrees
+      .zoom = camera->zoom                                      // Camera zoom (scaling), should be 1.0f by default
+    });
 
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], Color_to_raylib_Color(r->color));
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], Color_to_raylib_Color(r->color));
-  }
+    QUERY(
+        ( read, alias_LocalToWorld2D, t )
+      , ( read, DrawRectangle, r )
+    ) {
+      alias_R
+          hw = r->width / 2
+        , hh = r->height / 2
+        , bl = -hw
+        , br =  hw
+        , bt = -hh
+        , bb =  hh
+        ;
 
-  QUERY(
-      ( read, alias_LocalToWorld2D, t )
-    , ( read, DrawCircle, c )
-  ) {
-    DrawCircle(t->value._13, t->value._23, c->radius, Color_to_raylib_Color(c->color));
-  }
+      alias_Point2D box[] = {
+          { br, bb }
+        , { br, bt }
+        , { bl, bt }
+        , { bl, bb }
+        };
 
-  QUERY(
-      ( read, alias_LocalToWorld2D, w )
-    , ( read, DrawText, t )
-  ) {
-    DrawText(t->text, w->value._13, w->value._23, t->size, Color_to_raylib_Color(t->color));
+      box[0] = alias_multiply_Affine2D_Point2D(t->value, box[0]);
+      box[1] = alias_multiply_Affine2D_Point2D(t->value, box[1]);
+      box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
+      box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
+
+      DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], Color_to_raylib_Color(r->color));
+      DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], Color_to_raylib_Color(r->color));
+    }
+
+    QUERY(
+        ( read, alias_LocalToWorld2D, t )
+      , ( read, DrawCircle, c )
+    ) {
+      DrawCircle(t->value._13, t->value._23, c->radius, Color_to_raylib_Color(c->color));
+    }
+
+    QUERY(
+        ( read, alias_LocalToWorld2D, w )
+      , ( read, DrawText, t )
+    ) {
+      DrawText(t->text, w->value._13, w->value._23, t->size, Color_to_raylib_Color(t->color));
+    }
+
+    EndMode2D();
+    EndScissorMode();
   }
 
   _update_hud();
@@ -523,15 +552,8 @@ static void _update_display(void) {
   EndDrawing();
 }
 
-// hud
-DEFINE_COMPONENT(HudTransform)
-
-DEFINE_COMPONENT(HudAnchor)
-
-DEFINE_COMPONENT(HudParent)
-
-DEFINE_COMPONENT(HudText)
+// ====================================================================================================================
+// HUD ================================================================================================================
 
 static void _update_hud(void) {
-
 }
