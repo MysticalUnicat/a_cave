@@ -1,5 +1,7 @@
 #pragma once
 
+#include "engine/engine.h"
+
 struct {
   struct InputSignalDown unpause;
   uint32_t input;

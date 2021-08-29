@@ -7,6 +7,7 @@
 
 #include <alias/ecs.h>
 #include <alias/math.h>
+#include <alias/color.h>
 
 #include "util.h"
 
@@ -266,36 +267,6 @@ struct Image {
   void * loaded;
 };
 
-struct Color {
-  union {
-    struct {
-      uint8_t r;
-      uint8_t g;
-      uint8_t b;
-      uint8_t a;
-    };
-    uint32_t cpu_endian;
-  };
-};
-
-extern const struct Color Color_WHITE;
-extern const struct Color Color_GRAY;
-extern const struct Color Color_BLACK;
-extern const struct Color Color_TRANSPARENT_BLACK;
-
-static inline struct Color Color_from_rgb_u8(uint8_t r, uint8_t g, uint8_t b) {
-  return (struct Color) {
-      .r = r
-    , .g = g
-    , .b = b
-    , .a = 255
-  };
-}
-
-static inline uint32_t Color_rgba_u32(struct Color c) {
-  return c.cpu_endian;
-}
-
 DECLARE_COMPONENT(Camera, {
   alias_Vector2D viewport_min;
   alias_Vector2D viewport_max;
@@ -307,20 +278,24 @@ DECLARE_COMPONENT(Camera, {
 DECLARE_COMPONENT(DrawRectangle, {
   float width;
   float height;
-  struct Color color;
+  alias_Color color;
 })
 
 DECLARE_COMPONENT(DrawCircle, {
-  float radius;
-  struct Color color;
+  alias_R radius;
+  alias_Color color;
 })
 
 DECLARE_COMPONENT(DrawText, {
   const char * text;
-  float size;
-  struct Color color;
+  alias_R size;
+  alias_Color color;
 })
 
-// hud
+// ui
+void Engine_ui_center(void);
+void Engine_ui_font_size(alias_R size);
+void Engine_ui_font_color(alias_Color color);
+void Engine_ui_text(const char * format, ...);
 
 #endif

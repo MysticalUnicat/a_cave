@@ -1,5 +1,7 @@
 #include "engine.h"
 
+#include <alias/ui.h>
+
 #define USE_UV 1
 
 // why does this not put things in a namespace?!
@@ -9,17 +11,11 @@
 #undef Image
 #undef Color
 
-const struct Color Color_WHITE = (struct Color) { 255, 255, 255, 255 };
-const struct Color Color_GRAY = (struct Color) { 130, 130, 130, 255 };
-const struct Color Color_BLACK = (struct Color) { 0, 0, 0, 255 };
-const struct Color Color_TRANSPARENT_BLACK = (struct Color) { 0, 0, 0, 0 };
+const struct alias_Color alias_Color_RAYWHITE = (struct alias_Color) { 0.96, 0.96, 0.96, 0.96 };
 
-const struct Color Color_RAYWHITE = (struct Color) { 245, 245, 245, 255 };
-
-static inline raylib_Color Color_to_raylib_Color(struct Color c) {
-  return (raylib_Color) { c.r, c.g, c.b, c.a };
+static inline raylib_Color alias_Color_to_raylib_Color(struct alias_Color c) {
+  return (raylib_Color) { c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0 };
 }
-
 
 #if USE_UV
 #include <uv.h>
@@ -33,6 +29,8 @@ static inline void _frame_timer_f(uv_timer_t * t);
 #endif
 
 static alias_ecs_Instance * _ecs;
+static alias_ui * _ui;
+static bool _ui_recording;
 static alias_R _physics_speed;
 static struct State * _current_state;
 static uint32_t _screen_width;
@@ -57,6 +55,9 @@ void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * tit
 #endif
 
   alias_ecs_create_instance(NULL, &_ecs);
+
+  alias_ui_initilize(alias_default_MemoryCB(), &_ui);
+  _ui_recording = false;
 
   _physics_speed = alias_R_ONE;
   _current_state = NULL;
@@ -350,6 +351,8 @@ static void _update_input(void) {
     case Mouse_Position_Y:
       *binding = GetMouseY();
       break;
+    case InputSource_COUNT:
+      break;
     }
   }
 
@@ -391,6 +394,100 @@ uint32_t Engine_next_event_id(void) {
   return _events_id++;
 }
 
+#if 0
+  void CAT(NAME, _do) \
+    ( void * ud \
+    , alias_ecs_Instance * instance \
+    , alias_ecs_EntityHandle entity \
+      MAP(_QUERY_wparam, __VA_ARGS__) \
+      MAP(_QUERY_rparam, __VA_ARGS__) \
+  ); \
+  static void CAT(NAME, _do_wrap)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
+    uint32_t i = 0; \
+    MAP(_QUERY_wext, __VA_ARGS__) \
+    MAP(_QUERY_rext, __VA_ARGS__) \
+    EACH \
+    CAT(NAME, _do)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__)); \
+  } \
+  void NAME(void) { \
+    static alias_ecs_Query * query = NULL; \
+    if(query == NULL) { \
+      alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
+      alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
+      alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
+      alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
+        .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
+        .write_components = _wlist, \
+        .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
+        .read_components = _rlist, \
+        .num_filters = sizeof(_flist) / sizeof(_flist[0]), \
+        .filters = _flist \
+      }, &query); \
+    } \
+    PRE \
+    alias_ecs_execute_query(Engine_ecs(), query, (alias_ecs_QueryCB) { CAT(NAME, _do_wrap), NULL }); \
+    POST \
+  } \
+  void CAT(NAME, _do) \
+    ( void * ud \
+    , alias_ecs_Instance * instance \
+    , alias_ecs_EntityHandle entity \
+      MAP(_QUERY_wparam, __VA_ARGS__) \
+      MAP(_QUERY_rparam, __VA_ARGS__) \
+  )
+#endif
+
+#include <alias/cpp.h>
+
+#define ALIAS_EQ(PREFIX, X, Y) ALIAS__IS_PROBE(ALIAS__EQ__ ## PREFIX ## X ## __ ## PREFIX ## Y ## __)
+
+#define ALIAS_EQ__Qstatic_var__Qstatic_var__ ALIAS__PROBE
+#define ALIAS_EQ__Qpre__Qpre__               ALIAS__PROBE
+#define ALIAS_EQ__Qpost__Qpost__             ALIAS__PROBE
+#define ALIAS_EQ__Qread__Qread__             ALIAS__PROBE
+#define ALIAS_EQ__Qitem__Qitem__             ALIAS__PROBE
+
+#define Q(NAME, ...) ALIAS_EVAL(Q_impl(NAME, __VA_ARGS__))
+#define Q_impl(NAME, ...) \
+  static void ALIAS_CAT(NAME, _do)(alias_ecs_Instance * instance, alias_ecs_EntityHandle entity Q_do_arguments(__VA_ARGS__)) { \
+  } \
+  static void ALIAS_CAT(NAME, _do_wrap)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
+    ALIAS_CAT(NAME, _do)(instance, entity); \
+  } \
+  void NAME(void) { \
+    static alias_ecs_Query * query = NULL; \
+    alias_ecs_execute_query(Engine_ecs(), query, (alias_ecs_QueryCB) { ALIAS_CAT(NAME, _do_wrap), NULL }); \
+  }
+#define Q_do_arguments(...) \
+  ALIAS_MAP(Q_do_arguments_static_var, ## __VA_ARGS__)
+
+#define Q_do_arguments_static_var(X) ALIAS_IFF(ALIAS_EQ(
+
+Q( _update_events
+  , static_var(uint32_t, last_highest_seen, 0)
+  , static_var(struct CmdBuf, cbuf)
+  , pre(
+    CmdBuf_begin_recording(&cbuf);
+    uint32_t next_highest_seen = last_highest_seen;
+  )
+  , post(
+    last_highest_seen = next_highest_seen;
+
+    CmdBuf_end_recording(&cbuf);
+    CmdBuf_execute(&cbuf, Engine_ecs());
+  )
+  , read(Event, e)
+  , item(
+    if(e->id <= last_highest_seen) {
+      //STAT(cleanup ECS event);
+      CmdBuf_despawn(&cbuf, entity);
+    } else if(e->id > next_highest_seen) {
+      next_highest_seen = e->id;
+    }
+  )
+)
+
+/*
 static void _update_events(void) {
   static uint32_t last_highest_seen = 0;
 
@@ -407,11 +504,10 @@ static void _update_events(void) {
     }
   }
 
-  last_highest_seen = next_highest_seen;
-
   CmdBuf_end_recording(&cbuf);
   CmdBuf_execute(&cbuf, Engine_ecs());
 }
+*/
 
 // transform
 alias_TransformBundle * Engine_transform_bundle(void) {
@@ -475,12 +571,12 @@ DEFINE_COMPONENT(DrawCircle)
 
 DEFINE_COMPONENT(DrawText)
 
-static void _update_hud(void);
+static void _update_ui(void);
 
 static void _update_display(void) {
   BeginDrawing();
 
-  ClearBackground(Color_to_raylib_Color(Color_RAYWHITE));
+  ClearBackground(alias_Color_to_raylib_Color(alias_Color_RAYWHITE));
 
   QUERY(
       ( read, alias_LocalToWorld2D, transform )
@@ -547,13 +643,54 @@ static void _update_display(void) {
     EndScissorMode();
   }
 
-  _update_hud();
+  _update_ui();
 
   EndDrawing();
 }
 
 // ====================================================================================================================
-// HUD ================================================================================================================
+// UI =================================================================================================================
+static inline void _start_ui(void) {
+  static alias_ui_Input input;
 
-static void _update_hud(void) {
+  if(!_ui_recording) {
+    input.screen_size.width = _screen_width;
+    input.screen_size.height = _screen_height;
+
+    alias_ui_begin_frame(_ui, alias_default_MemoryCB(), &input);
+    _ui_recording = true;
+  }
+}
+
+void Engine_ui_center(void) {
+  _start_ui();
+  alias_ui_center(_ui);
+}
+
+void Engine_ui_font_size(alias_R size) {
+  _start_ui();
+  alias_ui_font_size(_ui, size);
+}
+
+void Engine_ui_font_color(alias_Color color) {
+  _start_ui();
+  alias_ui_font_color(_ui, color);
+}
+
+void Engine_ui_text(const char * format, ...) {
+  _start_ui();
+
+  va_list ap;
+  va_start(ap, format);
+  alias_ui_textv(_ui, format, ap);
+  va_end(ap);
+}
+
+static void _update_ui(void) {
+  static alias_ui_Output output;
+
+  if(_ui_recording) {
+    alias_ui_end_frame(_ui, alias_default_MemoryCB(), &output);
+    _ui_recording = false;
+  }
 }

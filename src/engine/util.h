@@ -148,38 +148,41 @@ extern alias_ecs_Instance * Engine_ecs(void);
 #define _QUERY_rarg_write(...)
 #define _QUERY_rarg_filter(...)
 
-#define _QUERY(EACH_INJECT, POST_INJECT, ...) \
-  static alias_ecs_Query * CAT(query, __LINE__) = NULL; \
-  if(CAT(query, __LINE__) == NULL) { \
-    alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
-    alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
-    alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
-    alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
-      .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
-      .write_components = _wlist, \
-      .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
-      .read_components = _rlist, \
-      .num_filters = sizeof(_flist) / sizeof(_flist[0]), \
-      .filters = _flist \
-    }, &CAT(query, __LINE__)); \
-  } \
-  auto void CAT(query_fn_, __LINE__) \
+#define _QUERY(NAME, PRE, EACH, POST, ...) \
+  void CAT(NAME, _do) \
     ( void * ud \
     , alias_ecs_Instance * instance \
     , alias_ecs_EntityHandle entity \
       MAP(_QUERY_wparam, __VA_ARGS__) \
       MAP(_QUERY_rparam, __VA_ARGS__) \
   ); \
-  void CAT(query_fn0_, __LINE__)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
+  static void CAT(NAME, _do_wrap)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
     uint32_t i = 0; \
     MAP(_QUERY_wext, __VA_ARGS__) \
     MAP(_QUERY_rext, __VA_ARGS__) \
-    EACH_INJECT \
-    CAT(query_fn_, __LINE__)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__)); \
+    EACH \
+    CAT(NAME, _do)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__)); \
   } \
-  alias_ecs_execute_query(Engine_ecs(), CAT(query, __LINE__), (alias_ecs_QueryCB) { CAT(query_fn0_, __LINE__), NULL }); \
-  POST_INJECT \
-  auto void CAT(query_fn_, __LINE__) \
+  void NAME(void) { \
+    static alias_ecs_Query * query = NULL; \
+    if(query == NULL) { \
+      alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
+      alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
+      alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
+      alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
+        .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
+        .write_components = _wlist, \
+        .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
+        .read_components = _rlist, \
+        .num_filters = sizeof(_flist) / sizeof(_flist[0]), \
+        .filters = _flist \
+      }, &query); \
+    } \
+    PRE \
+    alias_ecs_execute_query(Engine_ecs(), query, (alias_ecs_QueryCB) { CAT(NAME, _do_wrap), NULL }); \
+    POST \
+  } \
+  void CAT(NAME, _do) \
     ( void * ud \
     , alias_ecs_Instance * instance \
     , alias_ecs_EntityHandle entity \
@@ -187,7 +190,7 @@ extern alias_ecs_Instance * Engine_ecs(void);
       MAP(_QUERY_rparam, __VA_ARGS__) \
   )
 
-#define QUERY(...) _QUERY(,, __VA_ARGS__)
+#define QUERY(NAME, ...) _QUERY(NAME, , , , __VA_ARGS__)
 
 struct Cmd {
   uint32_t size;
