@@ -2,7 +2,7 @@
 
 #include <alias/ui.h>
 
-#define USE_UV 1
+#define USE_UV 0
 
 // why does this not put things in a namespace?!
 #define Image raylib_Image
@@ -14,7 +14,7 @@
 const struct alias_Color alias_Color_RAYWHITE = (struct alias_Color) { 0.96, 0.96, 0.96, 0.96 };
 
 static inline raylib_Color alias_Color_to_raylib_Color(struct alias_Color c) {
-  return (raylib_Color) { c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0 };
+  return (raylib_Color) { c.r * 255.0, c.g * 255.0, c.b * 255.0, c.a * 255.0 };
 }
 
 #if USE_UV
@@ -56,7 +56,7 @@ void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * tit
 
   alias_ecs_create_instance(NULL, &_ecs);
 
-  alias_ui_initilize(alias_default_MemoryCB(), &_ui);
+  alias_ui_initialize(alias_default_MemoryCB(), &_ui);
   _ui_recording = false;
 
   _physics_speed = alias_R_ONE;
@@ -394,120 +394,28 @@ uint32_t Engine_next_event_id(void) {
   return _events_id++;
 }
 
-#if 0
-  void CAT(NAME, _do) \
-    ( void * ud \
-    , alias_ecs_Instance * instance \
-    , alias_ecs_EntityHandle entity \
-      MAP(_QUERY_wparam, __VA_ARGS__) \
-      MAP(_QUERY_rparam, __VA_ARGS__) \
-  ); \
-  static void CAT(NAME, _do_wrap)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
-    uint32_t i = 0; \
-    MAP(_QUERY_wext, __VA_ARGS__) \
-    MAP(_QUERY_rext, __VA_ARGS__) \
-    EACH \
-    CAT(NAME, _do)(ud, instance, entity MAP(_QUERY_warg, __VA_ARGS__) MAP(_QUERY_rarg, __VA_ARGS__)); \
-  } \
-  void NAME(void) { \
-    static alias_ecs_Query * query = NULL; \
-    if(query == NULL) { \
-      alias_ecs_ComponentHandle _rlist[] = { MAP(_QUERY_rlist, __VA_ARGS__) }; \
-      alias_ecs_ComponentHandle _wlist[] = { MAP(_QUERY_wlist, __VA_ARGS__) }; \
-      alias_ecs_QueryFilterCreateInfo _flist[] = { MAP(_QUERY_flist, __VA_ARGS__) }; \
-      alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
-        .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
-        .write_components = _wlist, \
-        .num_read_components = sizeof(_rlist) / sizeof(_rlist[0]), \
-        .read_components = _rlist, \
-        .num_filters = sizeof(_flist) / sizeof(_flist[0]), \
-        .filters = _flist \
-      }, &query); \
-    } \
-    PRE \
-    alias_ecs_execute_query(Engine_ecs(), query, (alias_ecs_QueryCB) { CAT(NAME, _do_wrap), NULL }); \
-    POST \
-  } \
-  void CAT(NAME, _do) \
-    ( void * ud \
-    , alias_ecs_Instance * instance \
-    , alias_ecs_EntityHandle entity \
-      MAP(_QUERY_wparam, __VA_ARGS__) \
-      MAP(_QUERY_rparam, __VA_ARGS__) \
-  )
-#endif
-
-#include <alias/cpp.h>
-
-#define ALIAS_EQ(PREFIX, X, Y) ALIAS__IS_PROBE(ALIAS__EQ__ ## PREFIX ## X ## __ ## PREFIX ## Y ## __)
-
-#define ALIAS_EQ__Qstatic_var__Qstatic_var__ ALIAS__PROBE
-#define ALIAS_EQ__Qpre__Qpre__               ALIAS__PROBE
-#define ALIAS_EQ__Qpost__Qpost__             ALIAS__PROBE
-#define ALIAS_EQ__Qread__Qread__             ALIAS__PROBE
-#define ALIAS_EQ__Qitem__Qitem__             ALIAS__PROBE
-
-#define Q(NAME, ...) ALIAS_EVAL(Q_impl(NAME, __VA_ARGS__))
-#define Q_impl(NAME, ...) \
-  static void ALIAS_CAT(NAME, _do)(alias_ecs_Instance * instance, alias_ecs_EntityHandle entity Q_do_arguments(__VA_ARGS__)) { \
-  } \
-  static void ALIAS_CAT(NAME, _do_wrap)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
-    ALIAS_CAT(NAME, _do)(instance, entity); \
-  } \
-  void NAME(void) { \
-    static alias_ecs_Query * query = NULL; \
-    alias_ecs_execute_query(Engine_ecs(), query, (alias_ecs_QueryCB) { ALIAS_CAT(NAME, _do_wrap), NULL }); \
-  }
-#define Q_do_arguments(...) \
-  ALIAS_MAP(Q_do_arguments_static_var, ## __VA_ARGS__)
-
-#define Q_do_arguments_static_var(X) ALIAS_IFF(ALIAS_EQ(
-
-Q( _update_events
-  , static_var(uint32_t, last_highest_seen, 0)
-  , static_var(struct CmdBuf, cbuf)
+QUERY( _update_events
+  , state(uint32_t, last_highest_seen)
+  , state(struct CmdBuf, cbuf)
+  , state(uint32_t, next_highest_seen)
   , pre(
-    CmdBuf_begin_recording(&cbuf);
-    uint32_t next_highest_seen = last_highest_seen;
-  )
-  , post(
-    last_highest_seen = next_highest_seen;
-
-    CmdBuf_end_recording(&cbuf);
-    CmdBuf_execute(&cbuf, Engine_ecs());
+    CmdBuf_begin_recording(&state->cbuf);
+    state->next_highest_seen = state->last_highest_seen;
   )
   , read(Event, e)
-  , item(
-    if(e->id <= last_highest_seen) {
-      //STAT(cleanup ECS event);
-      CmdBuf_despawn(&cbuf, entity);
-    } else if(e->id > next_highest_seen) {
-      next_highest_seen = e->id;
+  , action(
+    if(e->id <= state->last_highest_seen) {
+      CmdBuf_despawn(&state->cbuf, entity);
+    } else if(e->id > state->next_highest_seen) {
+      state->next_highest_seen = e->id;
     }
   )
+  , post(
+    state->last_highest_seen = state->next_highest_seen;
+    CmdBuf_end_recording(&state->cbuf);
+    CmdBuf_execute(&state->cbuf, Engine_ecs());
+  )
 )
-
-/*
-static void _update_events(void) {
-  static uint32_t last_highest_seen = 0;
-
-  static struct CmdBuf cbuf;
-  CmdBuf_begin_recording(&cbuf);
-
-  uint32_t next_highest_seen = last_highest_seen;
-  QUERY(( read, Event, e )) {
-    if(e->id <= last_highest_seen) {
-      //STAT(cleanup ECS event);
-      CmdBuf_despawn(&cbuf, entity);
-    } else if(e->id > next_highest_seen) {
-      next_highest_seen = e->id;
-    }
-  }
-
-  CmdBuf_end_recording(&cbuf);
-  CmdBuf_execute(&cbuf, Engine_ecs());
-}
-*/
 
 // transform
 alias_TransformBundle * Engine_transform_bundle(void) {
@@ -573,80 +481,92 @@ DEFINE_COMPONENT(DrawText)
 
 static void _update_ui(void);
 
-static void _update_display(void) {
-  BeginDrawing();
+QUERY(_draw_rectangles
+  , read(alias_LocalToWorld2D, t)
+  , read(DrawRectangle, r)
+  , action(
+    alias_R
+        hw = r->width / 2
+      , hh = r->height / 2
+      , bl = -hw
+      , br =  hw
+      , bt = -hh
+      , bb =  hh
+      ;
 
-  ClearBackground(alias_Color_to_raylib_Color(alias_Color_RAYWHITE));
+    alias_Point2D box[] = {
+        { br, bb }
+      , { br, bt }
+      , { bl, bt }
+      , { bl, bb }
+      };
 
-  QUERY(
-      ( read, alias_LocalToWorld2D, transform )
-    , ( read, Camera, camera )
-  ) {
+    box[0] = alias_multiply_Affine2D_Point2D(t->value, box[0]);
+    box[1] = alias_multiply_Affine2D_Point2D(t->value, box[1]);
+    box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
+    box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
+
+    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], alias_Color_to_raylib_Color(r->color));
+    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], alias_Color_to_raylib_Color(r->color));
+  )
+)
+
+QUERY(_draw_circles
+  , read(alias_LocalToWorld2D, transform)
+  , read(DrawCircle, c)
+  , action(
+    printf("circle %g.%g\n", transform->value._13, transform->value._23);
+
+    DrawCircle(transform->value._13, transform->value._23, c->radius, alias_Color_to_raylib_Color(c->color));
+  )
+)
+
+QUERY(_draw_text
+  , read(alias_LocalToWorld2D, w)
+  , read(DrawText, t)
+  , action(
+    DrawText(t->text, w->value._13, w->value._23, t->size, alias_Color_to_raylib_Color(t->color));
+  )
+)
+
+QUERY(_update_display
+  , read(alias_LocalToWorld2D, transform)
+  , read(Camera, camera)
+  , pre(
+    BeginDrawing();
+
+    ClearBackground(alias_Color_to_raylib_Color(alias_Color_RAYWHITE));
+  )
+  , action(
     int x = camera->viewport_min.x * _screen_width;
     int y = camera->viewport_min.y * _screen_height;
     int width = (camera->viewport_max.x * _screen_width) - x;
     int height = (camera->viewport_max.y * _screen_height) - y;
 
-    BeginScissorMode(x, y, width, height);
+    //BeginScissorMode(x, y, width, height);
 
+    printf("camera %g.%g\n", transform->value._13, transform->value._23);
+
+    // thse numbers make no sense, why have this 'offset' bs
     BeginMode2D((Camera2D) {
-      .offset = { 0.0f, 0.0f },                                 // Camera offset (displacement from target)
+      .offset = { width / 2.0f, height / 2.0f },                // Camera offset (displacement from target)
       .target = { transform->value._13, transform->value._23 }, // Camera target (rotation and zoom origin)
       .rotation = 0.0f,                                         // Camera rotation in degrees
       .zoom = camera->zoom                                      // Camera zoom (scaling), should be 1.0f by default
     });
 
-    QUERY(
-        ( read, alias_LocalToWorld2D, t )
-      , ( read, DrawRectangle, r )
-    ) {
-      alias_R
-          hw = r->width / 2
-        , hh = r->height / 2
-        , bl = -hw
-        , br =  hw
-        , bt = -hh
-        , bb =  hh
-        ;
-
-      alias_Point2D box[] = {
-          { br, bb }
-        , { br, bt }
-        , { bl, bt }
-        , { bl, bb }
-        };
-
-      box[0] = alias_multiply_Affine2D_Point2D(t->value, box[0]);
-      box[1] = alias_multiply_Affine2D_Point2D(t->value, box[1]);
-      box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
-      box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
-
-      DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], Color_to_raylib_Color(r->color));
-      DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], Color_to_raylib_Color(r->color));
-    }
-
-    QUERY(
-        ( read, alias_LocalToWorld2D, t )
-      , ( read, DrawCircle, c )
-    ) {
-      DrawCircle(t->value._13, t->value._23, c->radius, Color_to_raylib_Color(c->color));
-    }
-
-    QUERY(
-        ( read, alias_LocalToWorld2D, w )
-      , ( read, DrawText, t )
-    ) {
-      DrawText(t->text, w->value._13, w->value._23, t->size, Color_to_raylib_Color(t->color));
-    }
+    _draw_rectangles();
+    _draw_circles();
+    _draw_text();
 
     EndMode2D();
-    EndScissorMode();
-  }
-
-  _update_ui();
-
-  EndDrawing();
-}
+    //EndScissorMode();
+  )
+  , post(
+    _update_ui();
+    EndDrawing();
+  )
+)
 
 // ====================================================================================================================
 // UI =================================================================================================================

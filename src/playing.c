@@ -22,7 +22,7 @@ void _playing_begin(void * ud) {
   _playing.input = Engine_add_input_frontend(0, sizeof(_playing_signals) / sizeof(_playing_signals[0]), _playing_signals);
 
   _playing.player = SPAWN( ( alias_Translation2D, .value.x = 0, .value.y = 0 )
-                         , ( DrawCircle, .radius = 5, .color = Color_from_rgb_u8(100, 100, 255) )
+                         , ( DrawCircle, .radius = 5, .color = alias_Color_from_rgb_u8(100, 100, 255) )
                          );
 
   _playing.camera = SPAWN( ( alias_Parent2D, .value = _playing.player )

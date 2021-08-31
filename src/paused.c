@@ -29,7 +29,7 @@ void _paused_frame(void * ud) {
 
   Engine_ui_center();
     Engine_ui_font_size(40);
-    Engine_ui_font_color(Color_GRAY);
+    Engine_ui_font_color(alias_Color_GRAY);
     Engine_ui_text("GAME PAUSED");
 }
 
