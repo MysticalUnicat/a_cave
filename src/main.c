@@ -10,7 +10,11 @@ enum Binding {
   Binding_LeftClick,
   Binding_RightClick,
   Binding_MouseX,
-  Binding_MouseY
+  Binding_MouseY,
+  Binding_PlayerLeft,
+  Binding_PlayerRight,
+  Binding_PlayerUp,
+  Binding_PlayerDown,
 };
 
 struct InputBackendPair main_input_backend[] = {
@@ -20,12 +24,21 @@ struct InputBackendPair main_input_backend[] = {
   { Mouse_Left_Button, Binding_LeftClick },
   { Mouse_Right_Button, Binding_RightClick },
   { Mouse_Position_X, Binding_MouseX },
-  { Mouse_Position_Y, Binding_MouseY }
+  { Mouse_Position_Y, Binding_MouseY },
+  { Keyboard_Left, Binding_PlayerLeft },
+  { Keyboard_Right, Binding_PlayerRight },
+  { Keyboard_Up, Binding_PlayerUp },
+  { Keyboard_Down, Binding_PlayerDown },
+  { Keyboard_A, Binding_PlayerLeft },
+  { Keyboard_D, Binding_PlayerRight },
+  { Keyboard_W, Binding_PlayerUp },
+  { Keyboard_S, Binding_PlayerDown },
 };
 
 struct InputSignalUp menu_back = INPUT_SIGNAL_UP(Binding_Back);
 struct InputSignalUp menu_forward = INPUT_SIGNAL_UP(Binding_Forward);
 struct InputSignalVector2D mouse_position = INPUT_SIGNAL_VECTOR2D(Binding_MouseX, Binding_MouseY);
+struct InputSignalDown mouse_left_click = INPUT_SIGNAL_DOWN(Binding_LeftClick);
 
 union InputSignal * _main_signals[] = {
   (union InputSignal *)&menu_back,

@@ -164,10 +164,19 @@ struct InputBackendPair {
 };
 
 enum InputSignalType {
+  InputSignal_Pass,
   InputSignal_Up,
   InputSignal_Down,
   InputSignal_Vector2D
 };
+
+struct InputSignalPass {
+  enum InputSignalType type;
+  bool value;
+  uint32_t binding;
+};
+
+#define INPUT_SIGNAL_PASS(BINDING) (struct InputSignalPass) { .type = InputSignal_Pass, .binding = BINDING }
 
 struct InputSignalUp {
   enum InputSignalType type;
@@ -198,6 +207,7 @@ struct InputSignalVector2D {
 
 union InputSignal {
   enum InputSignalType type;
+  struct InputSignalPass pass;
   struct InputSignalUp up;
   struct InputSignalDown down;
   struct InputSignalVector2D vector2d;

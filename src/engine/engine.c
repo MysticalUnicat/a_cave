@@ -360,6 +360,11 @@ static void _update_input(void) {
     for(uint32_t j = 0; j < _input_frontends[i].count; j++) {
       union InputSignal * signal = _input_frontends[i].signals[j];
       switch(signal->type) {
+      case InputSignal_Pass:
+        {
+          signal->pass.value = _input_bindings[signal->pass.binding] > alias_R_ZERO;
+          break;
+        }
       case InputSignal_Up:
         {
           bool value = _input_bindings[signal->up.binding] > alias_R_ZERO;
@@ -515,8 +520,6 @@ QUERY(_draw_circles
   , read(alias_LocalToWorld2D, transform)
   , read(DrawCircle, c)
   , action(
-    printf("circle %g.%g\n", transform->value._13, transform->value._23);
-
     DrawCircle(transform->value._13, transform->value._23, c->radius, alias_Color_to_raylib_Color(c->color));
   )
 )
@@ -544,8 +547,6 @@ QUERY(_update_display
     int height = (camera->viewport_max.y * _screen_height) - y;
 
     //BeginScissorMode(x, y, width, height);
-
-    printf("camera %g.%g\n", transform->value._13, transform->value._23);
 
     // thse numbers make no sense, why have this 'offset' bs
     BeginMode2D((Camera2D) {
