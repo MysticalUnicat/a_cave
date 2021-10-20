@@ -37,7 +37,7 @@ struct InputBackendPair main_input_backend[] = {
 
 struct InputSignalUp menu_back = INPUT_SIGNAL_UP(Binding_Back);
 struct InputSignalUp menu_forward = INPUT_SIGNAL_UP(Binding_Forward);
-struct InputSignalVector2D mouse_position = INPUT_SIGNAL_VECTOR2D(Binding_MouseX, Binding_MouseY);
+struct InputSignalPoint mouse_position = INPUT_SIGNAL_POINT(Binding_MouseX, Binding_MouseY);
 struct InputSignalDown mouse_left_click = INPUT_SIGNAL_DOWN(Binding_LeftClick);
 
 union InputSignal * _main_signals[] = {

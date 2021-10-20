@@ -11,7 +11,7 @@ DECLARE_COMPONENT(Movement, {
     MovementTarget_Point,
     MovementTarget_Entity
   } target;
-  alias_Point2D          point_target;
+  alias_pga2d_Point      point_target;
   alias_ecs_EntityHandle entity_target;
 
   alias_R movement_speed;
@@ -28,7 +28,7 @@ struct {
 
   Entity camera;
   Entity player;
-  alias_Vector2D player_target;
+  alias_pga2d_Direction player_target;
 
   alias_ecs_LayerHandle level_layer;
 } _playing = {
@@ -57,7 +57,7 @@ void _load_level(void) {
     alias_R x = alias_random_R() * 1000 - 500;
     alias_R y = alias_random_R() * 1000 - 500;
 
-    SPAWN( ( alias_Translation2D, .value.x = x, .value.y = y )
+    SPAWN( ( alias_Translation2D, .value = alias_pga2d_direction(x, y) )
          , ( DrawCircle, .radius = 5, .color = alias_Color_from_rgb_u8(100, 255, 100) )
          );
   }
@@ -68,14 +68,15 @@ void _playing_begin(void * ud) {
 
   _playing.input = Engine_add_input_frontend(0, sizeof(_playing_signals) / sizeof(_playing_signals[0]), _playing_signals);
 
-  _playing.player = SPAWN( ( alias_Translation2D, .value.x = 0, .value.y = 0 )
-                         , ( alias_Physics2DLinearMotion, .velocity.x = 0, .velocity.y = 0, .damping = 0.9f )
+  _playing.player = SPAWN( ( alias_Transform2D, .value = alias_pga2d_Motor_IDENTITY )
+                         , ( alias_Physics2DMotion )
+                         , ( alias_Physics2DDampen, .value = 0.95 )
                          , ( DrawCircle, .radius = 10, .color = alias_Color_from_rgb_u8(100, 100, 255) )
                          );
 
-  _playing.camera = SPAWN( ( alias_Translation2D, .value.x = 0, .value.y = 0 ) // offset from player
+  _playing.camera = SPAWN( ( alias_Translation2D ) // offset from player
                          , ( alias_Parent2D, .value = _playing.player )
-                         , ( Camera, .viewport_max = { alias_R_ONE, alias_R_ONE }, .zoom = alias_R_ONE )
+                         , ( Camera, .viewport_max = alias_pga2d_point(alias_R_ONE, alias_R_ONE), .zoom = alias_R_ONE )
                          );
 
   alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
@@ -94,18 +95,25 @@ void _playing_frame(void * ud) {
 
   alias_R move_speed = 50.0f;
 
-  alias_Vector2D velocity = {
-      .x = _playing.player_right.value - _playing.player_left.value
-    , .y = _playing.player_down.value - _playing.player_up.value
-  };
+  alias_R dir_x = _playing.player_right.value - _playing.player_left.value;
+  alias_R dir_y = _playing.player_down.value - _playing.player_up.value;
 
-  alias_Physics2DLinearMotion * limotion;
-  alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Physics2DLinearMotion_component(), (void **)&limotion);
+  // link event to forque pushers?
+  alias_Transform2D * position;
+  alias_Physics2DBodyMotion * body;
+  alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Transform2D_component(), (void **)&position);
+  alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Physics2DBodyMotion_component(), (void **)&body);
 
-  alias_R vlength = alias_Vector2D_length(velocity);
-  if(!alias_R_is_zero(vlength)) {
-    limotion->velocity = alias_multiply_Vector2D_R(velocity, move_speed / vlength);
-  }
+  alias_pga2d_Bivector force_line = (alias_pga2d_Bivector){ .e01 = dir_x, .e02 = dir_y };
+
+  body->forque = alias_pga2d_add(
+      alias_pga2d_v(body->forque),
+      alias_pga2d_mul(alias_pga2d_s(move_speed),
+                      alias_pga2d_dual(alias_pga2d_grade_2(alias_pga2d_sandwich(
+                          alias_pga2d_b(force_line),
+                          alias_pga2d_reverse_m(position->value))))));
+
+  //printf("playing, velocity = %g %g %g\n", limotion->value.e02, limotion->value.e01, limotion->value.e12);
 }
 
 void _playing_end(void * ud) {

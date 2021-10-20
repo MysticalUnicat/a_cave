@@ -379,10 +379,14 @@ static void _update_input(void) {
           signal->up._internal_1 = value;
           break;
         }
-      case InputSignal_Vector2D:
+      case InputSignal_Direction:
         {
-          signal->vector2d.value.x = _input_bindings[signal->vector2d.binding_x];
-          signal->vector2d.value.y = _input_bindings[signal->vector2d.binding_y];
+          signal->direction.value = alias_pga2d_direction(_input_bindings[signal->direction.binding_x], _input_bindings[signal->direction.binding_y]);
+          break;
+        }
+      case InputSignal_Point:
+        {
+          signal->point.value = alias_pga2d_point(_input_bindings[signal->point.binding_x], _input_bindings[signal->point.binding_y]);
           break;
         }
       }
@@ -499,17 +503,17 @@ QUERY(_draw_rectangles
       , bb =  hh
       ;
 
-    alias_Point2D box[] = {
-        { br, bb }
-      , { br, bt }
-      , { bl, bt }
-      , { bl, bb }
+    alias_pga2d_Point box[] = {
+        alias_pga2d_point(br, bb)
+      , alias_pga2d_point(br, bt)
+      , alias_pga2d_point(bl, bt)
+      , alias_pga2d_point(bl, bb)
       };
 
-    box[0] = alias_multiply_Affine2D_Point2D(t->value, box[0]);
-    box[1] = alias_multiply_Affine2D_Point2D(t->value, box[1]);
-    box[2] = alias_multiply_Affine2D_Point2D(t->value, box[2]);
-    box[3] = alias_multiply_Affine2D_Point2D(t->value, box[3]);
+    box[0] = alias_pga2d_sandwich_bm(box[0], t->motor);
+    box[1] = alias_pga2d_sandwich_bm(box[1], t->motor);
+    box[2] = alias_pga2d_sandwich_bm(box[2], t->motor);
+    box[3] = alias_pga2d_sandwich_bm(box[3], t->motor);
 
     DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], alias_Color_to_raylib_Color(r->color));
     DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], alias_Color_to_raylib_Color(r->color));
@@ -520,7 +524,7 @@ QUERY(_draw_circles
   , read(alias_LocalToWorld2D, transform)
   , read(DrawCircle, c)
   , action(
-    DrawCircle(transform->value._13, transform->value._23, c->radius, alias_Color_to_raylib_Color(c->color));
+    DrawCircle(alias_pga2d_point_x(transform->position), alias_pga2d_point_y(transform->position), c->radius, alias_Color_to_raylib_Color(c->color));
   )
 )
 
@@ -528,7 +532,7 @@ QUERY(_draw_text
   , read(alias_LocalToWorld2D, w)
   , read(DrawText, t)
   , action(
-    DrawText(t->text, w->value._13, w->value._23, t->size, alias_Color_to_raylib_Color(t->color));
+    DrawText(t->text, alias_pga2d_point_x(w->position), alias_pga2d_point_y(w->position), t->size, alias_Color_to_raylib_Color(t->color));
   )
 )
 
@@ -541,17 +545,17 @@ QUERY(_update_display
     ClearBackground(alias_Color_to_raylib_Color(alias_Color_RAYWHITE));
   )
   , action(
-    int x = camera->viewport_min.x * _screen_width;
-    int y = camera->viewport_min.y * _screen_height;
-    int width = (camera->viewport_max.x * _screen_width) - x;
-    int height = (camera->viewport_max.y * _screen_height) - y;
+    int x = alias_pga2d_point_x(camera->viewport_min) * _screen_width;
+    int y = alias_pga2d_point_y(camera->viewport_min) * _screen_height;
+    int width = (alias_pga2d_point_x(camera->viewport_max) * _screen_width) - x;
+    int height = (alias_pga2d_point_y(camera->viewport_max) * _screen_height) - y;
 
     //BeginScissorMode(x, y, width, height);
 
     // thse numbers make no sense, why have this 'offset' bs
     BeginMode2D((Camera2D) {
       .offset = { width / 2.0f, height / 2.0f },                // Camera offset (displacement from target)
-      .target = { transform->value._13, transform->value._23 }, // Camera target (rotation and zoom origin)
+      .target = { alias_pga2d_point_x(transform->position), alias_pga2d_point_y(transform->position) }, // Camera target (rotation and zoom origin)
       .rotation = 0.0f,                                         // Camera rotation in degrees
       .zoom = camera->zoom                                      // Camera zoom (scaling), should be 1.0f by default
     });

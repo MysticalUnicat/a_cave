@@ -80,7 +80,7 @@ extern alias_ecs_Instance * Engine_ecs(void);
 #define SPAWN(...) ({                                               \
   alias_ecs_EntityHandle _entity;                                   \
   alias_ecs_EntitySpawnComponent _components[] = {                  \
-    ALIAS_EVAL(ALIAS_MAP(SPAWN_COMPONENT, __VA_ARGS__))             \
+    ALIAS_CPP_EVAL(ALIAS_CPP_MAP(SPAWN_COMPONENT, __VA_ARGS__))             \
   };                                                                \
   ECS(spawn, Engine_ecs(), &(alias_ecs_EntitySpawnInfo) {           \
     .layer = ALIAS_ECS_INVALID_LAYER,                               \
@@ -195,25 +195,25 @@ extern alias_ecs_Instance * Engine_ecs(void);
 #define QUERY(NAME, ...) _QUERY(NAME, , , , __VA_ARGS__)
 #endif
 
-#define ALIAS__EQ__QUERYstate__QUERYstate(...) ALIAS__PROBE
-#define ALIAS__EQ__QUERYpre__QUERYpre(...)     ALIAS__PROBE
-#define ALIAS__EQ__QUERYread__QUERYread(...)   ALIAS__PROBE
-#define ALIAS__EQ__QUERYwrite__QUERYwrite(...) ALIAS__PROBE
-#define ALIAS__EQ__QUERYoptional__QUERYoptional(...) ALIAS__PROBE
-#define ALIAS__EQ__QUERYexclude__QUERYexclude(...) ALIAS__PROBE
-#define ALIAS__EQ__QUERYmodified__QUERYmodified(...) ALIAS__PROBE
-#define ALIAS__EQ__QUERYaction__QUERYaction(...)   ALIAS__PROBE
-#define ALIAS__EQ__QUERYpost__QUERYpost(...)   ALIAS__PROBE
+#define ALIAS_CPP_EQ__QUERYstate_state(...) ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYpre_pre(...)     ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYread_read(...)   ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYwrite_write(...) ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYoptional_optional(...) ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYexclude_exclude(...) ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYmodified_modified(...) ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYaction_action(...)   ALIAS_CPP_PROBE
+#define ALIAS_CPP_EQ__QUERYpost_post(...)   ALIAS_CPP_PROBE
 
-#define QUERY_is_state(X) ALIAS_EQ(QUERY, state, X)
-#define QUERY_is_pre(X) ALIAS_EQ(QUERY, pre, X)
-#define QUERY_is_read(X) ALIAS_EQ(QUERY, read, X)
-#define QUERY_is_write(X) ALIAS_EQ(QUERY, write, X)
-#define QUERY_is_filter(X) ALIAS_OR(ALIAS_OR(ALIAS_EQ(QUERY, optional, X), ALIAS_EQ(QUERY, exclude, X)), ALIAS_EQ(QUERY, modified, X))
-#define QUERY_is_action(X) ALIAS_EQ(QUERY, action, X)
-#define QUERY_is_post(X) ALIAS_EQ(QUERY, post, X)
+#define QUERY_is_state(X) ALIAS_CPP_EQ(QUERY, state, X)
+#define QUERY_is_pre(X) ALIAS_CPP_EQ(QUERY, pre, X)
+#define QUERY_is_read(X) ALIAS_CPP_EQ(QUERY, read, X)
+#define QUERY_is_write(X) ALIAS_CPP_EQ(QUERY, write, X)
+#define QUERY_is_filter(X) ALIAS_CPP_OR(ALIAS_CPP_OR(ALIAS_CPP_EQ(QUERY, optional, X), ALIAS_CPP_EQ(QUERY, exclude, X)), ALIAS_CPP_EQ(QUERY, modified, X))
+#define QUERY_is_action(X) ALIAS_CPP_EQ(QUERY, action, X)
+#define QUERY_is_post(X) ALIAS_CPP_EQ(QUERY, post, X)
 
-#define QUERY_emit(X) ALIAS_CAT(QUERY_emit_, X)
+#define QUERY_emit(X) ALIAS_CPP_CAT(QUERY_emit_, X)
 #define QUERY_emit_state(TYPE, NAME, ...) TYPE NAME;
 #define QUERY_emit_write(TYPE, NAME) struct TYPE * NAME = (struct TYPE *)data[__i++];
 #define QUERY_emit_read(TYPE, NAME) const struct TYPE * NAME = (const struct TYPE *)data[__i++];
@@ -221,33 +221,33 @@ extern alias_ecs_Instance * Engine_ecs(void);
 #define QUERY_emit_action(...) __VA_ARGS__
 #define QUERY_emit_post(...) __VA_ARGS__
 
-#define QUERY_emit_create(X) ALIAS_CAT(QUERY_emit_create_, X)
+#define QUERY_emit_create(X) ALIAS_CPP_CAT(QUERY_emit_create_, X)
 #define QUERY_emit_create_read(TYPE, NAME) TYPE##_component(),
 #define QUERY_emit_create_write(TYPE, NAME) TYPE##_component(),
 #define QUERY_emit_create_optional(TYPE) { .component = TYPE##_component(), .filter = ALIAS_ECS_FILTER_OPTIONAL },
 #define QUERY_emit_create_exclude(TYPE) { .component = TYPE##_component(), .filter = ALIAS_ECS_FILTER_EXCLUDE },
 #define QUERY_emit_create_modified(TYPE) { .component = TYPE##_component(), .filter = ALIAS_ECS_FILTER_MODIFIED },
 
-#define QUERY(NAME, ...) ALIAS_EVAL(QUERY_impl(NAME, __VA_ARGS__))
+#define QUERY(NAME, ...) ALIAS_CPP_EVAL(QUERY_impl(NAME, __VA_ARGS__))
 #define QUERY_impl(NAME, ...) \
-  struct ALIAS_CAT(NAME, _state) { \
+  struct ALIAS_CPP_CAT(NAME, _state) { \
     alias_ecs_Query * query; \
-    ALIAS_FILTER_MAP(QUERY_is_state, QUERY_emit, __VA_ARGS__) \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_state, QUERY_emit, __VA_ARGS__) \
   }; \
-  static void ALIAS_CAT(NAME, _do)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
+  static void ALIAS_CPP_CAT(NAME, _do)(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) { \
     uint32_t __i = 0; \
-    struct ALIAS_CAT(NAME, _state) * state = (struct ALIAS_CAT(NAME, _state) *)ud; \
-    ALIAS_FILTER_MAP(QUERY_is_write, QUERY_emit, __VA_ARGS__) \
-    ALIAS_FILTER_MAP(QUERY_is_read, QUERY_emit, __VA_ARGS__) \
-    ALIAS_FILTER_MAP(QUERY_is_action, QUERY_emit, __VA_ARGS__) \
+    struct ALIAS_CPP_CAT(NAME, _state) * state = (struct ALIAS_CPP_CAT(NAME, _state) *)ud; \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_write, QUERY_emit, __VA_ARGS__) \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_read, QUERY_emit, __VA_ARGS__) \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_action, QUERY_emit, __VA_ARGS__) \
   } \
   void NAME(void) { \
-    static struct ALIAS_CAT(NAME, _state) _state = { 0 }; \
-    static struct ALIAS_CAT(NAME, _state) * state = &_state; \
+    static struct ALIAS_CPP_CAT(NAME, _state) _state = { 0 }; \
+    static struct ALIAS_CPP_CAT(NAME, _state) * state = &_state; \
     if(state->query == NULL) { \
-      alias_ecs_ComponentHandle _rlist[] = { ALIAS_FILTER_MAP(QUERY_is_read, QUERY_emit_create, __VA_ARGS__) }; \
-      alias_ecs_ComponentHandle _wlist[] = { ALIAS_FILTER_MAP(QUERY_is_write, QUERY_emit_create, __VA_ARGS__) }; \
-      alias_ecs_QueryFilterCreateInfo _flist[] = { ALIAS_FILTER_MAP(QUERY_is_filter, QUERY_emit_create, __VA_ARGS__) }; \
+      alias_ecs_ComponentHandle _rlist[] = { ALIAS_CPP_FILTER_MAP(QUERY_is_read, QUERY_emit_create, __VA_ARGS__) }; \
+      alias_ecs_ComponentHandle _wlist[] = { ALIAS_CPP_FILTER_MAP(QUERY_is_write, QUERY_emit_create, __VA_ARGS__) }; \
+      alias_ecs_QueryFilterCreateInfo _flist[] = { ALIAS_CPP_FILTER_MAP(QUERY_is_filter, QUERY_emit_create, __VA_ARGS__) }; \
       alias_ecs_create_query(Engine_ecs(), &(alias_ecs_QueryCreateInfo) { \
         .num_write_components = sizeof(_wlist) / sizeof(_wlist[0]), \
         .write_components = _wlist, \
@@ -257,9 +257,9 @@ extern alias_ecs_Instance * Engine_ecs(void);
         .filters = _flist \
       }, &state->query); \
     } \
-    ALIAS_FILTER_MAP(QUERY_is_pre, QUERY_emit, __VA_ARGS__) \
-    alias_ecs_execute_query(Engine_ecs(), state->query, (alias_ecs_QueryCB) { ALIAS_CAT(NAME, _do), state }); \
-    ALIAS_FILTER_MAP(QUERY_is_post, QUERY_emit, __VA_ARGS__) \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_pre, QUERY_emit, __VA_ARGS__) \
+    alias_ecs_execute_query(Engine_ecs(), state->query, (alias_ecs_QueryCB) { ALIAS_CPP_CAT(NAME, _do), state }); \
+    ALIAS_CPP_FILTER_MAP(QUERY_is_post, QUERY_emit, __VA_ARGS__) \
   }
 
 struct Cmd {

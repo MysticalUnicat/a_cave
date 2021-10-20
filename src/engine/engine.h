@@ -167,7 +167,8 @@ enum InputSignalType {
   InputSignal_Pass,
   InputSignal_Up,
   InputSignal_Down,
-  InputSignal_Vector2D
+  InputSignal_Direction,
+  InputSignal_Point,
 };
 
 struct InputSignalPass {
@@ -196,21 +197,31 @@ struct InputSignalDown {
 
 #define INPUT_SIGNAL_DOWN(BINDING) (struct InputSignalDown) { .type = InputSignal_Down, .binding = BINDING }
 
-struct InputSignalVector2D {
+struct InputSignalDirection {
   enum InputSignalType type;
-  alias_Vector2D value;
+  alias_pga2d_Direction value;
   uint32_t binding_x;
   uint32_t binding_y;
 };
 
-#define INPUT_SIGNAL_VECTOR2D(BINDING_X, BINDING_Y) (struct InputSignalVector2D) { .type = InputSignal_Down, .binding_x = BINDING_X, .binding_y = BINDING_Y }
+#define INPUT_SIGNAL_DIRECTION(BINDING_X, BINDING_Y) (struct InputSignalDirection) { .type = InputSignal_Direction, .binding_x = BINDING_X, .binding_y = BINDING_Y }
+
+struct InputSignalPoint {
+  enum InputSignalType type;
+  alias_pga2d_Point value;
+  uint32_t binding_x;
+  uint32_t binding_y;
+};
+
+#define INPUT_SIGNAL_POINT(BINDING_X, BINDING_Y) (struct InputSignalPoint) { .type = InputSignal_Point, .binding_x = BINDING_X, .binding_y = BINDING_Y }
 
 union InputSignal {
   enum InputSignalType type;
   struct InputSignalPass pass;
   struct InputSignalUp up;
   struct InputSignalDown down;
-  struct InputSignalVector2D vector2d;
+  struct InputSignalDirection direction;
+  struct InputSignalPoint point;
 };
 
 void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count, const struct InputBackendPair * pairs);
@@ -250,6 +261,10 @@ static inline alias_ecs_ComponentHandle alias_Rotation2D_component(void) {
   return Engine_transform_bundle()->Rotation2D_component;
 }
 
+static inline alias_ecs_ComponentHandle alias_Transform2D_component(void) {
+  return Engine_transform_bundle()->Transform2D_component;
+}
+
 static inline alias_ecs_ComponentHandle alias_LocalToWorld2D_component(void) {
   return Engine_transform_bundle()->LocalToWorld2D_component;
 }
@@ -263,12 +278,20 @@ static inline alias_ecs_ComponentHandle alias_Parent2D_component(void) {
 
 alias_Physics2DBundle * Engine_physics_2d_bundle(void);
 
-static inline alias_ecs_ComponentHandle alias_Physics2DLinearMotion_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DLinearMotion_component;
+static inline alias_ecs_ComponentHandle alias_Physics2DMotion_component(void) {
+  return Engine_physics_2d_bundle()->Physics2DMotion_component;
 }
 
-static inline alias_ecs_ComponentHandle alias_Physics2DLinearMass_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DLinearMass_component;
+static inline alias_ecs_ComponentHandle alias_Physics2DBodyMotion_component(void) {
+  return Engine_physics_2d_bundle()->Physics2DBodyMotion_component;
+}
+
+static inline alias_ecs_ComponentHandle alias_Physics2DMass_component(void) {
+  return Engine_physics_2d_bundle()->Physics2DMass_component;
+}
+
+static inline alias_ecs_ComponentHandle alias_Physics2DDampen_component(void) {
+  return Engine_physics_2d_bundle()->Physics2DDampen_component;
 }
 
 // render
@@ -278,8 +301,8 @@ struct Image {
 };
 
 DECLARE_COMPONENT(Camera, {
-  alias_Vector2D viewport_min;
-  alias_Vector2D viewport_max;
+  alias_pga2d_Point viewport_min;
+  alias_pga2d_Point viewport_max;
   alias_R zoom;
 })
 
