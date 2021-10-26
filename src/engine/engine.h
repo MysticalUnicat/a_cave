@@ -331,4 +331,7 @@ void Engine_ui_font_size(alias_R size);
 void Engine_ui_font_color(alias_Color color);
 void Engine_ui_text(const char * format, ...);
 
+void Engine_ui_vertical(void);
+void Engine_ui_end(void);
+
 #endif

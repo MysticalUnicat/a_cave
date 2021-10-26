@@ -19,5 +19,5 @@ add_library(a_engine
 )
 target_link_libraries(a_engine alias raylib uv_a)
 
-add_executable(a_cave src/main.c)
-target_link_libraries(a_cave a_engine)
+add_executable(alias_town src/main.c)
+target_link_libraries(alias_town a_engine)

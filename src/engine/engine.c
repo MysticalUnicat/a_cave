@@ -515,8 +515,15 @@ QUERY(_draw_rectangles
     box[2] = alias_pga2d_sandwich_bm(box[2], t->motor);
     box[3] = alias_pga2d_sandwich_bm(box[3], t->motor);
 
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[1], *(Vector2*)&box[2], alias_Color_to_raylib_Color(r->color));
-    DrawTriangle(*(Vector2*)&box[0], *(Vector2*)&box[2], *(Vector2*)&box[3], alias_Color_to_raylib_Color(r->color));
+    Vector2 points[] = {
+      { alias_pga2d_point_x(box[0]), alias_pga2d_point_y(box[0]) },
+      { alias_pga2d_point_x(box[1]), alias_pga2d_point_y(box[1]) },
+      { alias_pga2d_point_x(box[2]), alias_pga2d_point_y(box[2]) },
+      { alias_pga2d_point_x(box[3]), alias_pga2d_point_y(box[3]) },
+    };
+
+    DrawTriangle(points[0], points[1], points[2], alias_Color_to_raylib_Color(r->color));
+    DrawTriangle(points[0], points[2], points[3], alias_Color_to_raylib_Color(r->color));
   )
 )
 
@@ -575,12 +582,27 @@ QUERY(_update_display
 
 // ====================================================================================================================
 // UI =================================================================================================================
+
+static inline void _text_size(const char * buffer, float size, float max_width, float * out_width, float * out_height) {
+  (void)max_width;
+  Vector2 dim = MeasureTextEx(GetFontDefault(), buffer, size, 0);
+  *out_width = dim.x;
+  *out_height = dim.y;
+}
+
+static inline void _text_draw(const char * buffer, float x, float y, float width, float size, alias_Color color) {
+  (void)width;
+  DrawText(buffer, x, y, size, alias_Color_to_raylib_Color(color));
+}
+
 static inline void _start_ui(void) {
   static alias_ui_Input input;
 
   if(!_ui_recording) {
     input.screen_size.width = _screen_width;
     input.screen_size.height = _screen_height;
+    input.text_size = _text_size;
+    input.text_draw = _text_draw;
 
     alias_ui_begin_frame(_ui, alias_default_MemoryCB(), &input);
     _ui_recording = true;
@@ -609,6 +631,16 @@ void Engine_ui_text(const char * format, ...) {
   va_start(ap, format);
   alias_ui_textv(_ui, format, ap);
   va_end(ap);
+}
+
+void Engine_ui_vertical(void) {
+  _start_ui();
+  alias_ui_begin_vertical(_ui);
+}
+
+void Engine_ui_end(void) {
+  _start_ui();
+  alias_ui_end(_ui);
 }
 
 static void _update_ui(void) {

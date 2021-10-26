@@ -70,8 +70,8 @@ void _playing_begin(void * ud) {
 
   _playing.player = SPAWN( ( alias_Transform2D, .value = alias_pga2d_Motor_IDENTITY )
                          , ( alias_Physics2DMotion )
-                         , ( alias_Physics2DDampen, .value = 0.95 )
-                         , ( DrawCircle, .radius = 10, .color = alias_Color_from_rgb_u8(100, 100, 255) )
+                         , ( alias_Physics2DDampen, .value = 10 )
+                         , ( DrawRectangle, .width = 10, .height = 20, .color = alias_Color_from_rgb_u8(100, 100, 255) )
                          );
 
   _playing.camera = SPAWN( ( alias_Translation2D ) // offset from player
@@ -93,17 +93,29 @@ void _playing_frame(void * ud) {
     Engine_push_state(&paused_state);
   }
 
-  alias_R move_speed = 50.0f;
+  alias_R move_speed = 1000.0f;
 
-  alias_R dir_x = _playing.player_right.value - _playing.player_left.value;
+  alias_R dir_x = _playing.player_left.value - _playing.player_right.value;
   alias_R dir_y = _playing.player_down.value - _playing.player_up.value;
 
   // link event to forque pushers?
-  alias_Transform2D * position;
+  alias_Transform2D * transform;
   alias_Physics2DBodyMotion * body;
-  alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Transform2D_component(), (void **)&position);
+  alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Transform2D_component(), (void **)&transform);
   alias_ecs_write_entity_component(Engine_ecs(), _playing.player, alias_Physics2DBodyMotion_component(), (void **)&body);
 
+  alias_pga2d_Motor position = transform->value;
+
+  #if 0
+  alias_pga2d_Point center = alias_pga2d_sandwich_bm(alias_pga2d_point(0, 0), transform->value);
+  alias_pga2d_Point offset = alias_pga2d_add_bb(center, alias_pga2d_direction(dir_x, dir_y));
+  alias_pga2d_Line force_line = alias_pga2d_join_bb(center, offset);
+
+  body->forque = alias_pga2d_add(
+      alias_pga2d_v(body->forque),
+      alias_pga2d_mul(alias_pga2d_s(move_speed), alias_pga2d_v(force_line)));
+  #else
+  // fake force line
   alias_pga2d_Bivector force_line = (alias_pga2d_Bivector){ .e01 = dir_x, .e02 = dir_y };
 
   body->forque = alias_pga2d_add(
@@ -111,7 +123,8 @@ void _playing_frame(void * ud) {
       alias_pga2d_mul(alias_pga2d_s(move_speed),
                       alias_pga2d_dual(alias_pga2d_grade_2(alias_pga2d_sandwich(
                           alias_pga2d_b(force_line),
-                          alias_pga2d_reverse_m(position->value))))));
+                          alias_pga2d_reverse_m(position))))));
+  #endif
 
   //printf("playing, velocity = %g %g %g\n", limotion->value.e02, limotion->value.e01, limotion->value.e12);
 }

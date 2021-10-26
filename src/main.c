@@ -49,7 +49,7 @@ union InputSignal * _main_signals[] = {
 #include "intro.c"
 
 int main(void) {
-  Engine_init(SCREEN_WIDTH, SCREEN_HEIGHT, "a cave", &intro_state);
+  Engine_init(SCREEN_WIDTH, SCREEN_HEIGHT, "alias town", &intro_state);
 
   Engine_set_player_input_backend(0, sizeof(main_input_backend) / sizeof(main_input_backend[0]), main_input_backend);
 
