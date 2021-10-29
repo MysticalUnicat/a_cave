@@ -297,9 +297,12 @@ static inline alias_ecs_ComponentHandle alias_Physics2DDampen_component(void) {
 }
 
 // render
+struct LoadedResource;
+
 struct Image {
   const char * path;
-  void * _loaded;
+  uint32_t resource_id;
+  struct LoadedResource * resource;
 };
 
 DECLARE_COMPONENT(Camera, {

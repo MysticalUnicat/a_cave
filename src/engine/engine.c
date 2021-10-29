@@ -1,6 +1,7 @@
 #include "engine.h"
 
 #include <alias/ui.h>
+#include <alias/data_structure/inline_list.h>
 
 #define UI_NUM_VERTEXES (1024 * 1024)
 #define UI_NUM_INDEXES  (1024 * 1024)
@@ -630,28 +631,113 @@ QUERY(_update_display
 
 // ====================================================================================================================
 // Resource ===========================================================================================================
-
-struct LoadedImage {
-  Texture2D raylib;
-  uint32_t width;
-  uint32_t height;
+enum ResourceType {
+  ResourceType_Image
 };
 
-struct LoadedImage * _load_image(struct Image * img) {
-  struct LoadedImage * loaded_image;
+struct LoadedResource {
+  alias_InlineList list;
 
-  if(img->_loaded == NULL) {
+  enum ResourceType type;
+  uint32_t id, gen;
+
+  union {
+    struct {
+      Texture2D raylib;
+      uint32_t width;
+      uint32_t height;
+    } image;
+  };
+};
+
+alias_InlineList _free_resources = ALIAS_INLINE_LIST_INIT(_free_resources);
+alias_InlineList _inactive_resources = ALIAS_INLINE_LIST_INIT(_inactive_resources);
+alias_InlineList _active_resources = ALIAS_INLINE_LIST_INIT(_active_resources);
+
+static uint32_t _resource_id = 1, _resource_gen = 1;
+
+void _free_resource(struct LoadedResource * resource) {
+  switch(resource->type) {
+  case ResourceType_Image:
+    UnloadTexture(resource->image.raylib);
+    break;
+  }
+
+  alias_InlineList_remove_self(&resource->list);
+  alias_InlineList_append(&_free_resources, &resource->list);
+}
+
+#define ALIAS_INLINE_LIST_EACH(LIST, ITEM) \
+  for(ITEM = (LIST)->next; ITEM != (LIST); ITEM = ITEM->next)
+
+#define ALIAS_INLINE_LIST_EACH_CONTAINER(LIST, ITEM, MEMBER)                         \
+  for( ITEM = ALIAS_INLINE_LIST_CONTAINER((LIST)->next, typeof(*ITEM), MEMBER)       \
+     ; &ITEM->MEMBER != (LIST)                                                       \
+     ; ITEM = ALIAS_INLINE_LIST_CONTAINER(ITEM->MEMBER.next, typeof(*ITEM), MEMBER) \
+     )
+
+#define ALIAS_INLINE_LIST_EACH_CONTAINER_SAFE(LIST, ITEM, NEXT, MEMBER)              \
+  for( ITEM = ALIAS_INLINE_LIST_CONTAINER((LIST)->next, typeof(*ITEM), MEMBER)       \
+     , NEXT = ALIAS_INLINE_LIST_CONTAINER(ITEM->MEMBER.next, typeof(*ITEM), MEMBER) \
+     ; &ITEM->MEMBER != (LIST)                                                       \
+     ; ITEM = NEXT                                                                   \
+     , NEXT = ALIAS_INLINE_LIST_CONTAINER(NEXT->MEMBER.next, typeof(*ITEM), MEMBER) \
+     )
+
+void _resources_gc(void) {
+  struct LoadedResource * resource, * next_resource;
+
+  ALIAS_INLINE_LIST_EACH_CONTAINER_SAFE(&_inactive_resources, resource, next_resource, list) {
+    _free_resource(resource);
+  }
+
+  _resource_gen++;
+}
+
+struct LoadedResource * _allocate_resource(enum ResourceType type) {
+  if(alias_InlineList_is_empty(&_free_resources)) {
+    _resources_gc();
+  }
+  struct LoadedResource * resource;
+  if(alias_InlineList_is_empty(&_free_resources)) {
+    resource = alias_malloc(alias_default_MemoryCB(), sizeof(*resource), alignof(*resource));
+    alias_InlineList_init(&resource->list);
+  } else {
+    resource = alias_InlineList_pop(&_free_resources);
+  }
+  alias_InlineList_append(&_active_resources, &resource->list);
+  resource->type = type;
+  resource->id = _resource_id++;
+  resource->gen = _resource_gen;
+  return resource;
+}
+
+void _touch_resource(struct LoadedResource * resource) {
+  if(resource->gen != _resource_gen) {
+    alias_InlineList_remove_self(&resource->list);
+    alias_InlineList_append(&_active_resources, &resource->list);
+    resource->gen = _resource_gen;
+  }
+}
+
+struct LoadedResource * _load_image(struct Image * img) {
+  struct LoadedResource * resource;
+
+  if(img->resource == NULL || img->resource_id != img->resource->id) {
     char path[1024];
     snprintf(path, sizeof(path), "assets/%s", img->path);
 
-    loaded_image = alias_malloc(alias_default_MemoryCB(), sizeof(struct LoadedImage), alignof(struct LoadedImage));
-    loaded_image->raylib = LoadTexture(path);
-    loaded_image->width = loaded_image->raylib.width;
-    loaded_image->height = loaded_image->raylib.height;
-    img->_loaded = loaded_image;
+    resource = _allocate_resource(ResourceType_Image);
+    resource->image.raylib = LoadTexture(path);
+    resource->image.width = resource->image.raylib.width;
+    resource->image.height = resource->image.raylib.height;
+    img->resource = resource;
+    img->resource_id = resource->id;
+  } else {
+    _touch_resource(img->resource);
   }
 
-  return (struct LoadedImage *)img->_loaded;
+  return img->resource;
 }
 
 // ====================================================================================================================
@@ -687,8 +773,8 @@ static inline void _start_ui(void) {
 
 void Engine_ui_image(struct Image * img) {
   _start_ui();
-  struct LoadedImage * image = _load_image(img);
-  alias_ui_image(_ui, image->width, image->height, 0, 0, 1, 1, image->raylib.id);
+  struct LoadedResource * resource = _load_image(img);
+  alias_ui_image(_ui, resource->image.width, resource->image.height, 0, 0, 1, 1, resource->image.raylib.id);
 }
 
 void Engine_ui_align_fractions(float x, float y) {
@@ -780,6 +866,10 @@ static void _update_ui(void) {
             , _ui_vertexes_data[index].xy[1]
             );
           if(j == 0) {
+            rlTexCoord2f(
+                _ui_vertexes_data[index].st[0]
+              , _ui_vertexes_data[index].st[1]
+              );
             rlVertex2f(
                 _ui_vertexes_data[index].xy[0]
               , _ui_vertexes_data[index].xy[1]
