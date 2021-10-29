@@ -2,6 +2,19 @@
 
 #include "playing.c"
 
+static int _intro_l = 0;
+
+char * _unicat_names[] = {
+  "Sarah",
+  "Charlie",
+  "Frank",
+  "Anna",
+  "Willa",
+  "Melonie"
+};
+
+struct Image _intro_title_image = { .path = "intro_title.png" };
+
 void _intro_frame(void * ud) {
   (void)ud;
 
@@ -17,14 +30,22 @@ void _intro_frame(void * ud) {
   }
 
   Engine_ui_center();
-    Engine_ui_font_color(alias_Color_GRAY);
-    //Engine_ui_vertical();
-      Engine_ui_font_size(40);
-      Engine_ui_text("alias town");
+    Engine_ui_image(&_intro_title_image);
 
-    //  Engine_ui_font_size(20);
-    //  Engine_ui_text("a game By Unicat");
-    //Engine_ui_end();
+  Engine_ui_center();
+    Engine_ui_font_color(alias_Color_GRAY);
+
+    Engine_ui_vertical();
+      Engine_ui_font_size(40);
+      Engine_ui_text("Alias Town");
+
+      Engine_ui_font_size(20);
+      Engine_ui_text("A game by %s | Unicat", _unicat_names[(_intro_l++ >> 5) % (sizeof(_unicat_names)/sizeof(_unicat_names[0]))]);
+    Engine_ui_end();
+
+  Engine_ui_top();
+  Engine_ui_font_color(alias_Color_BLACK);
+  Engine_ui_text("version 1");
 }
 
 struct State intro_state = {

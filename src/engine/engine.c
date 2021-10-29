@@ -2,12 +2,17 @@
 
 #include <alias/ui.h>
 
+#define UI_NUM_VERTEXES (1024 * 1024)
+#define UI_NUM_INDEXES  (1024 * 1024)
+#define UI_NUM_GROUPS   1024
+
 #define USE_UV 0
 
 // why does this not put things in a namespace?!
 #define Image raylib_Image
 #define Color raylib_Color
 #include <raylib.h>
+#include <rlgl.h>
 #undef Image
 #undef Color
 
@@ -29,10 +34,49 @@ static inline void _frame_timer_f(uv_timer_t * t);
 #endif
 
 static alias_ecs_Instance * _ecs;
+
 static alias_ui * _ui;
+static uint32_t _ui_indexes_data[UI_NUM_INDEXES];
+static struct _ui_Vertex {
+  float xy[2];
+  float rgba[4];
+  float st[2];
+} _ui_vertexes_data[UI_NUM_VERTEXES];
+static alias_memory_SubBuffer _ui_indexes = {
+    .pointer = _ui_indexes_data
+  , .count = UI_NUM_INDEXES
+  , .stride = sizeof(_ui_indexes_data[0])
+  , .type_format = alias_memory_Format_Uint32
+  , .type_length = 1
+};
+static alias_memory_SubBuffer _ui_vertexes_xy = {
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, xy)
+  , .count = UI_NUM_VERTEXES
+  , .stride = sizeof(_ui_vertexes_data[0])
+  , .type_format = alias_memory_Format_Float32
+  , .type_length = 2
+};
+static alias_memory_SubBuffer _ui_vertexes_rgba = {
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, rgba)
+  , .count = UI_NUM_VERTEXES
+  , .stride = sizeof(_ui_vertexes_data[0])
+  , .type_format = alias_memory_Format_Float32
+  , .type_length = 4
+};
+static alias_memory_SubBuffer _ui_vertexes_st = {
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, st)
+  , .count = UI_NUM_VERTEXES
+  , .stride = sizeof(_ui_vertexes_data[0])
+  , .type_format = alias_memory_Format_Float32
+  , .type_length = 2
+};
+static alias_ui_OutputGroup _ui_groups[UI_NUM_GROUPS];
 static bool _ui_recording;
+
 static alias_R _physics_speed;
+
 static struct State * _current_state;
+
 static uint32_t _screen_width;
 static uint32_t _screen_height;
 
@@ -456,6 +500,10 @@ void Engine_set_physics_speed(alias_R speed) {
   _physics_speed = speed;
 }
 
+alias_R Engine_time(void) {
+  return GetTime();
+}
+
 static void _update_physics(void) {
   const float timestep = 1.0f / 60.0f;
 
@@ -581,6 +629,32 @@ QUERY(_update_display
 )
 
 // ====================================================================================================================
+// Resource ===========================================================================================================
+
+struct LoadedImage {
+  Texture2D raylib;
+  uint32_t width;
+  uint32_t height;
+};
+
+struct LoadedImage * _load_image(struct Image * img) {
+  struct LoadedImage * loaded_image;
+
+  if(img->_loaded == NULL) {
+    char path[1024];
+    snprintf(path, sizeof(path), "assets/%s", img->path);
+
+    loaded_image = alias_malloc(alias_default_MemoryCB(), sizeof(struct LoadedImage), alignof(struct LoadedImage));
+    loaded_image->raylib = LoadTexture(path);
+    loaded_image->width = loaded_image->raylib.width;
+    loaded_image->height = loaded_image->raylib.height;
+    img->_loaded = loaded_image;
+  }
+
+  return (struct LoadedImage *)img->_loaded;
+}
+
+// ====================================================================================================================
 // UI =================================================================================================================
 
 static inline void _text_size(const char * buffer, float size, float max_width, float * out_width, float * out_height) {
@@ -606,12 +680,20 @@ static inline void _start_ui(void) {
 
     alias_ui_begin_frame(_ui, alias_default_MemoryCB(), &input);
     _ui_recording = true;
+
+    alias_ui_begin_stack(_ui);
   }
 }
 
-void Engine_ui_center(void) {
+void Engine_ui_image(struct Image * img) {
   _start_ui();
-  alias_ui_center(_ui);
+  struct LoadedImage * image = _load_image(img);
+  alias_ui_image(_ui, image->width, image->height, 0, 0, 1, 1, image->raylib.id);
+}
+
+void Engine_ui_align_fractions(float x, float y) {
+  _start_ui();
+  alias_ui_align_fractions(_ui, x, y);
 }
 
 void Engine_ui_font_size(alias_R size) {
@@ -638,6 +720,16 @@ void Engine_ui_vertical(void) {
   alias_ui_begin_vertical(_ui);
 }
 
+void Engine_ui_horizontal(void) {
+  _start_ui();
+  alias_ui_begin_horizontal(_ui);
+}
+
+void Engine_ui_stack(void) {
+  _start_ui();
+  alias_ui_begin_stack(_ui);
+}
+
 void Engine_ui_end(void) {
   _start_ui();
   alias_ui_end(_ui);
@@ -646,8 +738,58 @@ void Engine_ui_end(void) {
 static void _update_ui(void) {
   static alias_ui_Output output;
 
+  output.num_groups = 0;
+  output.max_groups = UI_NUM_GROUPS;
+  output.groups = _ui_groups;
+  output.num_indexes = 0;
+  output.num_vertexes = 0;
+  output.index_sub_buffer = _ui_indexes;
+  output.xy_sub_buffer = _ui_vertexes_xy;
+  output.rgba_sub_buffer = _ui_vertexes_rgba;
+  output.st_sub_buffer = _ui_vertexes_st;
+
   if(_ui_recording) {
+    alias_ui_end(_ui); // end stack
     alias_ui_end_frame(_ui, alias_default_MemoryCB(), &output);
     _ui_recording = false;
+
+    for(uint32_t g = 0; g < output.num_groups; g++) {
+      uint32_t length = _ui_groups[g].length;
+      if(length == 0) {
+        continue;
+      }
+
+      rlSetTexture(_ui_groups[g].texture_id);
+
+      rlBegin(RL_QUADS);
+      for(uint32_t i = _ui_groups[g].index, end = i + length; i < end; ) {
+        for(uint32_t j = 0; j < 3; j++) {
+          uint32_t index = _ui_indexes_data[i++];
+          rlColor4f(
+              _ui_vertexes_data[index].rgba[0]
+            , _ui_vertexes_data[index].rgba[1]
+            , _ui_vertexes_data[index].rgba[2]
+            , _ui_vertexes_data[index].rgba[3]
+            );
+          rlTexCoord2f(
+              _ui_vertexes_data[index].st[0]
+            , _ui_vertexes_data[index].st[1]
+            );
+          rlVertex2f(
+              _ui_vertexes_data[index].xy[0]
+            , _ui_vertexes_data[index].xy[1]
+            );
+          if(j == 0) {
+            rlVertex2f(
+                _ui_vertexes_data[index].xy[0]
+              , _ui_vertexes_data[index].xy[1]
+              );
+          }
+        }
+      }
+      rlEnd();
+    }
+
+    rlSetTexture(0);
   }
 }

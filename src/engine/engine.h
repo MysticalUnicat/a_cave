@@ -42,6 +42,8 @@ alias_ecs_Instance * Engine_ecs(void);
 alias_R Engine_physics_speed(void);
 void Engine_set_physics_speed(alias_R speed);
 
+alias_R Engine_time(void);
+
 // input
 enum InputSource {
   Keyboard_Apostrophe,
@@ -297,7 +299,7 @@ static inline alias_ecs_ComponentHandle alias_Physics2DDampen_component(void) {
 // render
 struct Image {
   const char * path;
-  void * loaded;
+  void * _loaded;
 };
 
 DECLARE_COMPONENT(Camera, {
@@ -326,12 +328,27 @@ DECLARE_COMPONENT(DrawText, {
 })
 
 // ui
-void Engine_ui_center(void);
+void Engine_ui_align_fractions(float x, float y);
+
+static inline void Engine_ui_top_left(void) { Engine_ui_align_fractions(0, 0); }
+static inline void Engine_ui_top(void) { Engine_ui_align_fractions(0.5, 0); }
+static inline void Engine_ui_top_right(void) { Engine_ui_align_fractions(1, 0); }
+static inline void Engine_ui_left(void) { Engine_ui_align_fractions(0, 0.5); }
+static inline void Engine_ui_center(void) { Engine_ui_align_fractions(0.5, 0.5); }
+static inline void Engine_ui_right(void) { Engine_ui_align_fractions(1, 0.5); }
+static inline void Engine_ui_bottom_left(void) { Engine_ui_align_fractions(0, 1); }
+static inline void Engine_ui_bottom(void) { Engine_ui_align_fractions(0.5, 1); }
+static inline void Engine_ui_bottom_right(void) { Engine_ui_align_fractions(1, 1); }
+
+void Engine_ui_image(struct Image *);
+
+void Engine_ui_vertical(void);
+void Engine_ui_horizontal(void);
+void Engine_ui_stack(void);
+void Engine_ui_end(void);
+
 void Engine_ui_font_size(alias_R size);
 void Engine_ui_font_color(alias_Color color);
 void Engine_ui_text(const char * format, ...);
-
-void Engine_ui_vertical(void);
-void Engine_ui_end(void);
 
 #endif
