@@ -528,7 +528,98 @@ static void _update_physics(void) {
   }
 }
 
-// render
+// ====================================================================================================================
+// Resource ===========================================================================================================
+enum ResourceType {
+  ResourceType_Image
+};
+
+struct LoadedResource {
+  alias_InlineList list;
+
+  enum ResourceType type;
+  uint32_t id, gen;
+
+  union {
+    struct {
+      Texture2D raylib;
+      uint32_t width;
+      uint32_t height;
+    } image;
+  };
+};
+
+alias_InlineList _free_resources = ALIAS_INLINE_LIST_INIT(_free_resources);
+alias_InlineList _inactive_resources = ALIAS_INLINE_LIST_INIT(_inactive_resources);
+alias_InlineList _active_resources = ALIAS_INLINE_LIST_INIT(_active_resources);
+
+static uint32_t _resource_id = 1, _resource_gen = 1;
+
+void _free_resource(struct LoadedResource * resource) {
+  switch(resource->type) {
+  case ResourceType_Image:
+    UnloadTexture(resource->image.raylib);
+    break;
+  }
+
+  alias_InlineList_remove_self(&resource->list);
+  alias_InlineList_push(&_free_resources, &resource->list);
+}
+
+void _resources_gc(void) {
+  struct LoadedResource * resource, * next_resource;
+  ALIAS_INLINE_LIST_EACH_CONTAINER_SAFE(&_inactive_resources, resource, next_resource, list) {
+    _free_resource(resource);
+  }
+  alias_InlineList_push_list(&_inactive_resources, &_active_resources);
+  _resource_gen++;
+}
+
+struct LoadedResource * _allocate_resource(enum ResourceType type) {
+  struct LoadedResource * resource;
+  if(alias_InlineList_is_empty(&_free_resources)) {
+    resource = alias_malloc(alias_default_MemoryCB(), sizeof(*resource), alignof(*resource));
+    alias_InlineList_init(&resource->list);
+  } else {
+    resource = ALIAS_INLINE_LIST_CONTAINER(alias_InlineList_pop(&_free_resources), struct LoadedResource, list);
+  }
+  alias_InlineList_push(&_active_resources, &resource->list);
+  resource->type = type;
+  resource->id = _resource_id++;
+  resource->gen = _resource_gen;
+  return resource;
+}
+
+void _touch_resource(struct LoadedResource * resource) {
+  if(resource->gen != _resource_gen) {
+    alias_InlineList_remove_self(&resource->list);
+    alias_InlineList_push(&_active_resources, &resource->list);
+    resource->gen = _resource_gen;
+  }
+}
+
+struct LoadedResource * _load_image(struct Image * img) {
+  struct LoadedResource * resource;
+
+  if(img->resource == NULL || img->resource_id != img->resource->id) {
+    char path[1024];
+    snprintf(path, sizeof(path), "assets/%s", img->path);
+
+    resource = _allocate_resource(ResourceType_Image);
+    resource->image.raylib = LoadTexture(path);
+    resource->image.width = resource->image.raylib.width;
+    resource->image.height = resource->image.raylib.height;
+    img->resource = resource;
+    img->resource_id = resource->id;
+  } else {
+    _touch_resource(img->resource);
+  }
+
+  return img->resource;
+}
+
+// ====================================================================================================================
+// RENDER =============================================================================================================
 DEFINE_COMPONENT(Camera)
 
 DEFINE_COMPONENT(DrawRectangle)
@@ -536,6 +627,8 @@ DEFINE_COMPONENT(DrawRectangle)
 DEFINE_COMPONENT(DrawCircle)
 
 DEFINE_COMPONENT(DrawText)
+
+DEFINE_COMPONENT(Sprite)
 
 static void _update_ui(void);
 
@@ -592,6 +685,86 @@ QUERY(_draw_text
   )
 )
 
+// raylib fucking sucks for rendering
+void _render_triangles(uint32_t texture_id, const struct _ui_Vertex * vertexes, uint32_t num_indexes, const uint32_t * indexes) {
+  rlSetTexture(texture_id);
+  rlBegin(RL_QUADS);
+  for(uint32_t i = 0; i < num_indexes; ) {
+    for(uint32_t j = 0; j < 3; j++, i++) {
+      uint32_t index = indexes[i];
+      rlColor4f(
+          vertexes[index].rgba[0]
+        , vertexes[index].rgba[1]
+        , vertexes[index].rgba[2]
+        , vertexes[index].rgba[3]
+        );
+      rlTexCoord2f(
+          vertexes[index].st[0]
+        , vertexes[index].st[1]
+        );
+      rlVertex2f(
+          vertexes[index].xy[0]
+        , vertexes[index].xy[1]
+        );
+      if(j == 0) {
+        // stupid fucking raylib, honestly wtf
+        rlTexCoord2f(
+            vertexes[index].st[0]
+          , vertexes[index].st[1]
+          );
+        rlVertex2f(
+            vertexes[index].xy[0]
+          , vertexes[index].xy[1]
+          );
+      }
+    }
+  }
+  rlEnd();
+}
+
+QUERY(_draw_sprites
+  , read(alias_LocalToWorld2D, t)
+  , read(Sprite, s)
+  , action(
+    struct LoadedResource * res = _load_image(s->image);
+
+    alias_R
+        hw = res->image.width / 2
+      , hh = res->image.height / 2
+      , bl = -hw
+      , br =  hw
+      , bt = -hh
+      , bb =  hh
+      ;
+
+    alias_pga2d_Point box[] = {
+        alias_pga2d_point(br, bb)
+      , alias_pga2d_point(br, bt)
+      , alias_pga2d_point(bl, bt)
+      , alias_pga2d_point(bl, bb)
+      };
+
+    box[0] = alias_pga2d_sandwich_bm(box[0], t->motor);
+    box[1] = alias_pga2d_sandwich_bm(box[1], t->motor);
+    box[2] = alias_pga2d_sandwich_bm(box[2], t->motor);
+    box[3] = alias_pga2d_sandwich_bm(box[3], t->motor);
+
+    struct _ui_Vertex vertexes[] = {
+        { .xy = { alias_pga2d_point_x(box[0]), alias_pga2d_point_y(box[0]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s1, s->t1 } }
+      , { .xy = { alias_pga2d_point_x(box[1]), alias_pga2d_point_y(box[1]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s1, s->t0 } }
+      , { .xy = { alias_pga2d_point_x(box[2]), alias_pga2d_point_y(box[2]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s0, s->t0 } }
+      , { .xy = { alias_pga2d_point_x(box[3]), alias_pga2d_point_y(box[3]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s0, s->t1 } }
+    };
+
+    uint32_t indexes[6] = {
+        0, 1, 2
+      , 0, 2, 3
+    };
+
+    _render_triangles(res->image.raylib.id, vertexes, 6, indexes);
+  )
+)
+
 QUERY(_update_display
   , read(alias_LocalToWorld2D, transform)
   , read(Camera, camera)
@@ -616,6 +789,8 @@ QUERY(_update_display
       .zoom = camera->zoom                                      // Camera zoom (scaling), should be 1.0f by default
     });
 
+    _draw_sprites();
+
     _draw_rectangles();
     _draw_circles();
     _draw_text();
@@ -628,117 +803,6 @@ QUERY(_update_display
     EndDrawing();
   )
 )
-
-// ====================================================================================================================
-// Resource ===========================================================================================================
-enum ResourceType {
-  ResourceType_Image
-};
-
-struct LoadedResource {
-  alias_InlineList list;
-
-  enum ResourceType type;
-  uint32_t id, gen;
-
-  union {
-    struct {
-      Texture2D raylib;
-      uint32_t width;
-      uint32_t height;
-    } image;
-  };
-};
-
-alias_InlineList _free_resources = ALIAS_INLINE_LIST_INIT(_free_resources);
-alias_InlineList _inactive_resources = ALIAS_INLINE_LIST_INIT(_inactive_resources);
-alias_InlineList _active_resources = ALIAS_INLINE_LIST_INIT(_active_resources);
-
-static uint32_t _resource_id = 1, _resource_gen = 1;
-
-void _free_resource(struct LoadedResource * resource) {
-  switch(resource->type) {
-  case ResourceType_Image:
-    UnloadTexture(resource->image.raylib);
-    break;
-  }
-
-  alias_InlineList_remove_self(&resource->list);
-  alias_InlineList_append(&_free_resources, &resource->list);
-}
-
-#define ALIAS_INLINE_LIST_EACH(LIST, ITEM) \
-  for(ITEM = (LIST)->next; ITEM != (LIST); ITEM = ITEM->next)
-
-#define ALIAS_INLINE_LIST_EACH_CONTAINER(LIST, ITEM, MEMBER)                         \
-  for( ITEM = ALIAS_INLINE_LIST_CONTAINER((LIST)->next, typeof(*ITEM), MEMBER)       \
-     ; &ITEM->MEMBER != (LIST)                                                       \
-     ; ITEM = ALIAS_INLINE_LIST_CONTAINER(ITEM->MEMBER.next, typeof(*ITEM), MEMBER) \
-     )
-
-#define ALIAS_INLINE_LIST_EACH_CONTAINER_SAFE(LIST, ITEM, NEXT, MEMBER)              \
-  for( ITEM = ALIAS_INLINE_LIST_CONTAINER((LIST)->next, typeof(*ITEM), MEMBER)       \
-     , NEXT = ALIAS_INLINE_LIST_CONTAINER(ITEM->MEMBER.next, typeof(*ITEM), MEMBER) \
-     ; &ITEM->MEMBER != (LIST)                                                       \
-     ; ITEM = NEXT                                                                   \
-     , NEXT = ALIAS_INLINE_LIST_CONTAINER(NEXT->MEMBER.next, typeof(*ITEM), MEMBER) \
-     )
-
-void _resources_gc(void) {
-  struct LoadedResource * resource, * next_resource;
-
-  ALIAS_INLINE_LIST_EACH_CONTAINER_SAFE(&_inactive_resources, resource, next_resource, list) {
-    _free_resource(resource);
-  }
-
-  _resource_gen++;
-}
-
-struct LoadedResource * _allocate_resource(enum ResourceType type) {
-  if(alias_InlineList_is_empty(&_free_resources)) {
-    _resources_gc();
-  }
-  struct LoadedResource * resource;
-  if(alias_InlineList_is_empty(&_free_resources)) {
-    resource = alias_malloc(alias_default_MemoryCB(), sizeof(*resource), alignof(*resource));
-    alias_InlineList_init(&resource->list);
-  } else {
-    resource = alias_InlineList_pop(&_free_resources);
-  }
-  alias_InlineList_append(&_active_resources, &resource->list);
-  resource->type = type;
-  resource->id = _resource_id++;
-  resource->gen = _resource_gen;
-  return resource;
-}
-
-void _touch_resource(struct LoadedResource * resource) {
-  if(resource->gen != _resource_gen) {
-    alias_InlineList_remove_self(&resource->list);
-    alias_InlineList_append(&_active_resources, &resource->list);
-    resource->gen = _resource_gen;
-  }
-}
-
-struct LoadedResource * _load_image(struct Image * img) {
-  struct LoadedResource * resource;
-
-  if(img->resource == NULL || img->resource_id != img->resource->id) {
-    char path[1024];
-    snprintf(path, sizeof(path), "assets/%s", img->path);
-
-    resource = _allocate_resource(ResourceType_Image);
-    resource->image.raylib = LoadTexture(path);
-    resource->image.width = resource->image.raylib.width;
-    resource->image.height = resource->image.raylib.height;
-    img->resource = resource;
-    img->resource_id = resource->id;
-  } else {
-    _touch_resource(img->resource);
-  }
-
-  return img->resource;
-}
 
 // ====================================================================================================================
 // UI =================================================================================================================
@@ -845,9 +909,12 @@ static void _update_ui(void) {
         continue;
       }
 
+      _render_triangles(_ui_groups[g].texture_id, _ui_vertexes_data, _ui_groups[g].length, _ui_indexes_data + _ui_groups[g].index);
+
+      /*
       rlSetTexture(_ui_groups[g].texture_id);
 
-      rlBegin(RL_QUADS);
+      rlBegin(RL_QUADS); // has to use quads with degenerate vertexes...
       for(uint32_t i = _ui_groups[g].index, end = i + length; i < end; ) {
         for(uint32_t j = 0; j < 3; j++) {
           uint32_t index = _ui_indexes_data[i++];
@@ -866,6 +933,7 @@ static void _update_ui(void) {
             , _ui_vertexes_data[index].xy[1]
             );
           if(j == 0) {
+            // stupid fucking raylib, honestly wtf
             rlTexCoord2f(
                 _ui_vertexes_data[index].st[0]
               , _ui_vertexes_data[index].st[1]
@@ -878,6 +946,7 @@ static void _update_ui(void) {
         }
       }
       rlEnd();
+      */
     }
 
     rlSetTexture(0);

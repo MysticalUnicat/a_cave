@@ -330,6 +330,12 @@ DECLARE_COMPONENT(DrawText, {
   alias_Color color;
 })
 
+DECLARE_COMPONENT(Sprite, {
+  struct Image * image;
+  alias_R s0, t0, s1, t1;
+  alias_Color color;
+})
+
 // ui
 void Engine_ui_align_fractions(float x, float y);
 

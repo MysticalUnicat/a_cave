@@ -48,21 +48,22 @@ extern alias_ecs_Instance * Engine_ecs(void);
   const struct IDENT * IDENT##_read(Entity entity);  \
   struct IDENT * IDENT##_write(Entity entity);
 
-#define DEFINE_COMPONENT(IDENT, ...)                                                                         \
-  LAZY_GLOBAL(                                                                                                 \
-    alias_ecs_ComponentHandle,                                                                                 \
-    IDENT##_component,                                                                                         \
-    ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT), ## __VA_ARGS__ }, &inner); \
-  )                                                                                                            \
-  const struct IDENT * IDENT##_read(Entity entity) {                                                           \
-    const struct IDENT * ptr;                                                                                  \
-    alias_ecs_read_entity_component(Engine_ecs(), entity, IDENT##_component(), (const void **)&ptr);                \
-    return ptr;                                                                                                \
-  }                                                                                                            \
-  struct IDENT * IDENT##_write(Entity entity) {                                                                \
-    struct IDENT * ptr;                                                                                        \
-    alias_ecs_write_entity_component(Engine_ecs(), entity, IDENT##_component(), (void **)&ptr);                     \
-    return ptr;                                                                                                \
+#define DEFINE_COMPONENT(IDENT, ...)                                                                 \
+  LAZY_GLOBAL(                                                                                       \
+    alias_ecs_ComponentHandle,                                                                       \
+    IDENT##_component,                                                                               \
+    ECS(register_component, Engine_ecs()                                                             \
+      , &(alias_ecs_ComponentCreateInfo) { .size = sizeof(struct IDENT), ## __VA_ARGS__ }, &inner);  \
+  )                                                                                                  \
+  const struct IDENT * IDENT##_read(Entity entity) {                                                 \
+    const struct IDENT * ptr;                                                                        \
+    alias_ecs_read_entity_component(Engine_ecs(), entity, IDENT##_component(), (const void **)&ptr); \
+    return ptr;                                                                                      \
+  }                                                                                                  \
+  struct IDENT * IDENT##_write(Entity entity) {                                                      \
+    struct IDENT * ptr;                                                                              \
+    alias_ecs_write_entity_component(Engine_ecs(), entity, IDENT##_component(), (void **)&ptr);      \
+    return ptr;                                                                                      \
   }
 
 #define DECLARE_TAG_COMPONENT(IDENT) \
@@ -77,19 +78,22 @@ extern alias_ecs_Instance * Engine_ecs(void);
 
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
 #define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },
-#define SPAWN(...) ({                                               \
+
+#define SPAWN_LAYER(LAYER, ...) ({                                  \
   alias_ecs_EntityHandle _entity;                                   \
   alias_ecs_EntitySpawnComponent _components[] = {                  \
-    ALIAS_CPP_EVAL(ALIAS_CPP_MAP(SPAWN_COMPONENT, __VA_ARGS__))             \
+    ALIAS_CPP_EVAL(ALIAS_CPP_MAP(SPAWN_COMPONENT, __VA_ARGS__))     \
   };                                                                \
   ECS(spawn, Engine_ecs(), &(alias_ecs_EntitySpawnInfo) {           \
-    .layer = ALIAS_ECS_INVALID_LAYER,                               \
+    .layer = LAYER,                                                 \
     .count = 1,                                                     \
     .num_components = sizeof(_components) / sizeof(_components[0]), \
     .components = _components                                       \
   }, &_entity);                                                     \
   _entity;                                                          \
 })
+
+#define SPAWN(...) SPAWN_LAYER(ALIAS_ECS_INVALID_LAYER, ## __VA_ARGS__)
 
 #if 0
 #define _QUERY_wlist(...)               _QUERY_wlist_ __VA_ARGS__               // unwrap

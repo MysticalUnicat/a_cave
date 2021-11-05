@@ -1,12 +1,10 @@
-#pragma once
-
-#include "engine/engine.h"
+#include "local.h"
 
 struct {
-  struct InputSignalDown unpause;
+  struct InputSignalUp unpause;
   uint32_t input;
 } _paused = {
-  .unpause = INPUT_SIGNAL_DOWN(Binding_Pause)
+  .unpause = INPUT_SIGNAL_UP(Binding_Pause)
 };
 
 union InputSignal * _paused_signals[] = {
@@ -16,13 +14,16 @@ union InputSignal * _paused_signals[] = {
 void _paused_begin(void * ud) {
   (void)ud;
 
-  Engine_set_physics_speed(0.01);
+  _paused.input = Engine_add_input_frontend(0, sizeof(_paused_signals) / sizeof(_paused_signals[0]), _paused_signals);
+
+  Engine_set_physics_speed(alias_R_ZERO);
 }
 
 void _paused_frame(void * ud) {
   (void)ud;
 
   if(_paused.unpause.value || menu_back.value) {
+    printf("UNPAUSE\n");
     Engine_pop_state();
     return;
   }
@@ -35,6 +36,8 @@ void _paused_frame(void * ud) {
 
 void _paused_end(void * ud) {
   (void)ud;
+
+  Engine_remove_input_frontend(0, _paused.input);
 
   Engine_set_physics_speed(alias_R_ONE);
 }

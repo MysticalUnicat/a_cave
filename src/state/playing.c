@@ -1,22 +1,18 @@
-#pragma once
-
 #include <stdlib.h>
 #include <alias/ecs.h>
 
-#include "paused.c"
+#include "local.h"
 
-DECLARE_COMPONENT(Movement, {
-  enum MovementTarget {
-    MovementTarget_None,
-    MovementTarget_Point,
-    MovementTarget_Entity
-  } target;
-  alias_pga2d_Point      point_target;
-  alias_ecs_EntityHandle entity_target;
+// system
+extern void player_movement_system(void);
+extern void movement_system(void);
 
-  alias_R movement_speed;
-})
-DEFINE_COMPONENT(Movement);
+// prefab
+extern alias_ecs_EntityHandle _spawn_grass(alias_ecs_LayerHandle layer, alias_pga2d_Point origin);
+extern alias_ecs_EntityHandle _spawn_player(alias_ecs_LayerHandle layer, alias_pga2d_Point origin);
+extern alias_ecs_EntityHandle _spawn_camera(alias_ecs_LayerHandle layer, alias_ecs_EntityHandle target);
+
+extern struct State paused_state;
 
 struct {
   struct InputSignalUp pause;
@@ -30,6 +26,7 @@ struct {
   Entity player;
   alias_pga2d_Direction player_target;
 
+  alias_ecs_LayerHandle player_layer;
   alias_ecs_LayerHandle level_layer;
 } _playing = {
   .pause = INPUT_SIGNAL_UP(Binding_Pause),
@@ -51,16 +48,30 @@ alias_R alias_random_R(void) {
   return (alias_R)(rand()) / (alias_R)RAND_MAX;
 }
 
+static void _shoot_bullet(alias_ecs_EntityHandle entity, void * * write_data, void * * read_data) {
+  /*
+  const alias_Transform2D * transform = (const alias_Transform2D *)read_data[0];
+  SPAWN( ( alias_Transform2D, .value = { .one = 1, .e02 = transform->value.e02, .e01 = transform->value.e01 } )
+       , ( alias_Physics2DMotion, .value = alias_pga2d_translator(1,
+  */
+}
+
 void _load_level(void) {
   // make some grass
   for(uint32_t i = 0; i < 100; i++) {
     alias_R x = alias_random_R() * 1000 - 500;
     alias_R y = alias_random_R() * 1000 - 500;
 
-    SPAWN( ( alias_Translation2D, .value = alias_pga2d_direction(x, y) )
-         , ( DrawCircle, .radius = 5, .color = alias_Color_from_rgb_u8(100, 255, 100) )
-         );
+    _spawn_grass(_playing.level_layer, alias_pga2d_point(x, y));
   }
+
+  // make a bullet shooter
+  /*
+  SPAWN( ( alias_Translation2D, .value = alias_pga2d_direction(0, 5) )
+       , ( DrawCircle, .radius = 10, .color = alias_Color_from_rgb_u8(127, 0, 0) )
+       , ( Timer, .period = 500, .function = _shoot_bullet, .num_read_components = 1, .read_components = (alias_ecs_ComponentHandle[]) { alias_Transform2d_component() } )
+       );
+  */
 }
 
 void _playing_begin(void * ud) {
@@ -68,16 +79,12 @@ void _playing_begin(void * ud) {
 
   _playing.input = Engine_add_input_frontend(0, sizeof(_playing_signals) / sizeof(_playing_signals[0]), _playing_signals);
 
-  _playing.player = SPAWN( ( alias_Transform2D, .value = alias_pga2d_Motor_IDENTITY )
-                         , ( alias_Physics2DMotion )
-                         , ( alias_Physics2DDampen, .value = 10 )
-                         , ( DrawRectangle, .width = 10, .height = 20, .color = alias_Color_from_rgb_u8(100, 100, 255) )
-                         );
+  alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
+    .max_entities = 0
+  }, &_playing.player_layer);
 
-  _playing.camera = SPAWN( ( alias_Translation2D ) // offset from player
-                         , ( alias_Parent2D, .value = _playing.player )
-                         , ( Camera, .viewport_max = alias_pga2d_point(alias_R_ONE, alias_R_ONE), .zoom = alias_R_ONE )
-                         );
+  _playing.player = _spawn_player(_playing.player_layer, alias_pga2d_point(0, 0));
+  _playing.camera = _spawn_camera(_playing.player_layer, _playing.player);
 
   alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
     .max_entities = 0
@@ -91,8 +98,10 @@ void _playing_frame(void * ud) {
 
   if(_playing.pause.value) {
     Engine_push_state(&paused_state);
+    return;
   }
 
+  #if 0
   alias_R move_speed = 1000.0f;
 
   alias_R dir_x = _playing.player_left.value - _playing.player_right.value;
@@ -127,6 +136,10 @@ void _playing_frame(void * ud) {
   #endif
 
   //printf("playing, velocity = %g %g %g\n", limotion->value.e02, limotion->value.e01, limotion->value.e12);
+  #else
+  player_movement_system();
+  movement_system();
+  #endif
 }
 
 void _playing_end(void * ud) {
@@ -134,6 +147,7 @@ void _playing_end(void * ud) {
 
   Engine_remove_input_frontend(0, _playing.input);
 
+  alias_ecs_destroy_layer(Engine_ecs(), _playing.player_layer, ALIAS_ECS_LAYER_DESTROY_REMOVE_ENTITIES);
   alias_ecs_destroy_layer(Engine_ecs(), _playing.level_layer, ALIAS_ECS_LAYER_DESTROY_REMOVE_ENTITIES);
 }
 

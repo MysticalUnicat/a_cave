@@ -1,21 +1,7 @@
-#include "engine/engine.h"
+#include "state/local.h"
 
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 600
-
-enum Binding {
-  Binding_Back,
-  Binding_Forward,
-  Binding_Pause,
-  Binding_LeftClick,
-  Binding_RightClick,
-  Binding_MouseX,
-  Binding_MouseY,
-  Binding_PlayerLeft,
-  Binding_PlayerRight,
-  Binding_PlayerUp,
-  Binding_PlayerDown,
-};
 
 struct InputBackendPair main_input_backend[] = {
   { Keyboard_Enter, Binding_Forward },
@@ -46,7 +32,7 @@ union InputSignal * _main_signals[] = {
   (union InputSignal *)&mouse_position
 };
 
-#include "intro.c"
+extern struct State intro_state;
 
 int main(void) {
   Engine_init(SCREEN_WIDTH, SCREEN_HEIGHT, "alias town", &intro_state);

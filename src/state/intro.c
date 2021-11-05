@@ -1,6 +1,6 @@
-#pragma once
+#include "local.h"
 
-#include "playing.c"
+struct State playing_state;
 
 static int _intro_l = 0;
 
