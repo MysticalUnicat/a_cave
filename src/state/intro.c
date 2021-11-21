@@ -1,6 +1,6 @@
 #include "local.h"
 
-struct State playing_state;
+extern struct State playing_state;
 
 static int _intro_l = 0;
 

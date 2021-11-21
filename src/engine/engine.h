@@ -250,51 +250,41 @@ DECLARE_COMPONENT(Event, {
 
 uint32_t Engine_next_event_id(void);
 
+#define ENGINE_COMPONENT(BUNDLE, IDENT)                                                                      \
+  static inline alias_ecs_ComponentHandle alias_##IDENT##_component(void) {                                  \
+    return BUNDLE()->IDENT##_component;                                                                      \
+  }                                                                                                          \
+  static inline const struct alias_##IDENT * alias_##IDENT##_read(Entity entity) {                           \
+    const struct alias_##IDENT * ptr;                                                                        \
+    alias_ecs_read_entity_component(Engine_ecs(), entity, BUNDLE()->IDENT##_component, (const void **)&ptr); \
+    return ptr;                                                                                              \
+  }                                                                                                          \
+  static inline struct alias_##IDENT * alias_##IDENT##_write(Entity entity) {                                \
+    struct alias_##IDENT * ptr;                                                                              \
+    alias_ecs_write_entity_component(Engine_ecs(), entity, BUNDLE()->IDENT##_component, (void **)&ptr);      \
+    return ptr;                                                                                              \
+  }
+
 // transform
 #include <alias/transform.h>
 
 alias_TransformBundle * Engine_transform_bundle(void);
 
-static inline alias_ecs_ComponentHandle alias_Translation2D_component(void) {
-  return Engine_transform_bundle()->Translation2D_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Rotation2D_component(void) {
-  return Engine_transform_bundle()->Rotation2D_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Transform2D_component(void) {
-  return Engine_transform_bundle()->Transform2D_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_LocalToWorld2D_component(void) {
-  return Engine_transform_bundle()->LocalToWorld2D_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Parent2D_component(void) {
-  return Engine_transform_bundle()->Parent2D_component;
-}
+ENGINE_COMPONENT(Engine_transform_bundle, Translation2D)
+ENGINE_COMPONENT(Engine_transform_bundle, Rotation2D)
+ENGINE_COMPONENT(Engine_transform_bundle, Transform2D)
+ENGINE_COMPONENT(Engine_transform_bundle, LocalToWorld2D)
+ENGINE_COMPONENT(Engine_transform_bundle, Parent2D)
 
 // physics
 #include <alias/physics.h>
 
 alias_Physics2DBundle * Engine_physics_2d_bundle(void);
 
-static inline alias_ecs_ComponentHandle alias_Physics2DMotion_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DMotion_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Physics2DBodyMotion_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DBodyMotion_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Physics2DMass_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DMass_component;
-}
-
-static inline alias_ecs_ComponentHandle alias_Physics2DDampen_component(void) {
-  return Engine_physics_2d_bundle()->Physics2DDampen_component;
-}
+ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DMotion)
+ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DBodyMotion)
+ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DMass)
+ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DDampen)
 
 // render
 struct LoadedResource;

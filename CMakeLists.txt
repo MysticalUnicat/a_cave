@@ -19,5 +19,21 @@ add_library(a_engine
 )
 target_link_libraries(a_engine alias raylib uv_a)
 
-add_executable(alias_town src/main.c)
+add_executable(alias_town
+  src/main.c
+
+  src/component/movement.c
+  src/component/player_control_movement.c
+
+  src/prefab/camera.c
+  src/prefab/grass.c
+  src/prefab/player.c
+
+  src/state/intro.c
+  src/state/paused.c
+  src/state/playing.c
+
+  src/system/movement.c
+  src/system/player_movement.c
+)
 target_link_libraries(alias_town a_engine)
