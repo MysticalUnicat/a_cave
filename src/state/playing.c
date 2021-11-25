@@ -15,12 +15,12 @@ extern alias_ecs_EntityHandle _spawn_camera(alias_ecs_LayerHandle layer, alias_e
 extern struct State paused_state;
 
 struct {
-  struct InputSignalUp pause;
-  struct InputSignalPass player_left;
-  struct InputSignalPass player_right;
-  struct InputSignalPass player_up;
-  struct InputSignalPass player_down;
-  uint32_t input;
+  //struct InputSignalUp pause;
+  //struct InputSignalPass player_left;
+  //struct InputSignalPass player_right;
+  //struct InputSignalPass player_up;
+  //struct InputSignalPass player_down;
+  //uint32_t input;
 
   Entity camera;
   Entity player;
@@ -29,20 +29,20 @@ struct {
   alias_ecs_LayerHandle player_layer;
   alias_ecs_LayerHandle level_layer;
 } _playing = {
-  .pause = INPUT_SIGNAL_UP(Binding_Pause),
-  .player_left = INPUT_SIGNAL_PASS(Binding_PlayerLeft),
-  .player_right = INPUT_SIGNAL_PASS(Binding_PlayerRight),
-  .player_up = INPUT_SIGNAL_PASS(Binding_PlayerUp),
-  .player_down = INPUT_SIGNAL_PASS(Binding_PlayerDown),
+  //.pause = INPUT_SIGNAL_UP(Binding_Pause),
+  //.player_left = INPUT_SIGNAL_PASS(Binding_PlayerLeft),
+  //.player_right = INPUT_SIGNAL_PASS(Binding_PlayerRight),
+  //.player_up = INPUT_SIGNAL_PASS(Binding_PlayerUp),
+  //.player_down = INPUT_SIGNAL_PASS(Binding_PlayerDown),
 };
 
-union InputSignal * _playing_signals[] = {
-  (union InputSignal *)&_playing.pause,
-  (union InputSignal *)&_playing.player_left,
-  (union InputSignal *)&_playing.player_right,
-  (union InputSignal *)&_playing.player_up,
-  (union InputSignal *)&_playing.player_down,
-};
+//union InputSignal * _playing_signals[] = {
+//  (union InputSignal *)&_playing.pause,
+//  (union InputSignal *)&_playing.player_left,
+//  (union InputSignal *)&_playing.player_right,
+//  (union InputSignal *)&_playing.player_up,
+//  (union InputSignal *)&_playing.player_down,
+//};
 
 alias_R alias_random_R(void) {
   return (alias_R)(rand()) / (alias_R)RAND_MAX;
@@ -77,7 +77,7 @@ void _load_level(void) {
 void _playing_begin(void * ud) {
   (void)ud;
 
-  _playing.input = Engine_add_input_frontend(0, sizeof(_playing_signals) / sizeof(_playing_signals[0]), _playing_signals);
+  //_playing.input = Engine_add_input_frontend(0, sizeof(_playing_signals) / sizeof(_playing_signals[0]), _playing_signals);
 
   alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
     .max_entities = 0
@@ -96,12 +96,12 @@ void _playing_begin(void * ud) {
 void _playing_frame(void * ud) {
   (void)ud;
 
-  if(_playing.pause.value) {
+  #if 0
+  if(_playing.pause.boolean) {
     Engine_push_state(&paused_state);
     return;
   }
 
-  #if 0
   alias_R move_speed = 1000.0f;
 
   alias_R dir_x = _playing.player_left.value - _playing.player_right.value;
@@ -145,7 +145,7 @@ void _playing_frame(void * ud) {
 void _playing_end(void * ud) {
   (void)ud;
 
-  Engine_remove_input_frontend(0, _playing.input);
+  //Engine_remove_input_frontend(0, _playing.input);
 
   alias_ecs_destroy_layer(Engine_ecs(), _playing.player_layer, ALIAS_ECS_LAYER_DESTROY_REMOVE_ENTITIES);
   alias_ecs_destroy_layer(Engine_ecs(), _playing.level_layer, ALIAS_ECS_LAYER_DESTROY_REMOVE_ENTITIES);

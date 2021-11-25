@@ -9,6 +9,8 @@ QUERY( movement_system
     alias_pga2d_Point position = local_to_world->position;
     const alias_LocalToWorld2D * tgt;
 
+    printf("movement\n");
+
     switch(move->target) {
     case MovementTarget_None:
       break;

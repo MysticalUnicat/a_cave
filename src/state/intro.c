@@ -18,12 +18,12 @@ struct Image _intro_title_image = { .path = "intro_title.png" };
 void _intro_frame(void * ud) {
   (void)ud;
 
-  if(menu_back.value) {
+  if(main_inputs.menu_back.boolean) {
     Engine_pop_state();
     return;
   }
 
-  if(menu_forward.value) {
+  if(main_inputs.menu_forward.boolean) {
     Engine_pop_state();
     Engine_push_state(&playing_state);
     return;

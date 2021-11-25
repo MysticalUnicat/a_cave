@@ -233,10 +233,10 @@ void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count,
 
 static struct {
   uint32_t count;
-  union InputSignal * * signals;
+  struct InputSignal * signals;
 } _input_frontends[MAX_INPUT_FRONTEND_SETS] = { 0 };
 
-uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals) {
+uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, struct InputSignal * signals) {
   (void)player_index;
 
   uint32_t index = 0;
@@ -403,35 +403,35 @@ static void _update_input(void) {
 
   for(uint32_t i = 0; i < MAX_INPUT_FRONTEND_SETS; i++) {
     for(uint32_t j = 0; j < _input_frontends[i].count; j++) {
-      union InputSignal * signal = _input_frontends[i].signals[j];
+      struct InputSignal * signal = &_input_frontends[i].signals[j];
       switch(signal->type) {
       case InputSignal_Pass:
         {
-          signal->pass.value = _input_bindings[signal->pass.binding] > alias_R_ZERO;
+          signal->boolean = _input_bindings[signal->bindings[0]] > alias_R_ZERO;
           break;
         }
       case InputSignal_Up:
         {
-          bool value = _input_bindings[signal->up.binding] > alias_R_ZERO;
-          signal->up.value = !signal->up._internal_1 && value;
-          signal->up._internal_1 = value;
+          bool value = _input_bindings[signal->bindings[0]] > alias_R_ZERO;
+          signal->boolean = !signal->internal.up && value;
+          signal->internal.up = value;
           break;
         }
       case InputSignal_Down:
         {
-          bool value = _input_bindings[signal->up.binding] > alias_R_ZERO;
-          signal->up.value = signal->up._internal_1 && !value;
-          signal->up._internal_1 = value;
+          bool value = _input_bindings[signal->bindings[0]] > alias_R_ZERO;
+          signal->boolean = signal->internal.down && !value;
+          signal->internal.down = value;
           break;
         }
       case InputSignal_Direction:
         {
-          signal->direction.value = alias_pga2d_direction(_input_bindings[signal->direction.binding_x], _input_bindings[signal->direction.binding_y]);
+          signal->direction = alias_pga2d_direction(_input_bindings[signal->bindings[0]], _input_bindings[signal->bindings[1]]);
           break;
         }
       case InputSignal_Point:
         {
-          signal->point.value = alias_pga2d_point(_input_bindings[signal->point.binding_x], _input_bindings[signal->point.binding_y]);
+          signal->point = alias_pga2d_point(_input_bindings[signal->bindings[0]], _input_bindings[signal->bindings[1]]);
           break;
         }
       }

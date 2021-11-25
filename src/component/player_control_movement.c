@@ -1,28 +1,34 @@
 #include "../component.h"
+#include "../state/local.h"
 
-#define COMPONENT_impl(IDENT, ITYPE, DREF, ...)                                                      \
-  LAZY_GLOBAL(                                                                                       \
-    alias_ecs_ComponentHandle,                                                                       \
-    IDENT##_component,                                                                               \
-    ECS(register_component, Engine_ecs()                                                             \
-      , &(alias_ecs_ComponentCreateInfo) { .size = sizeof(ITYPE), ## __VA_ARGS__ }, &inner);         \
-  )                                                                                                  \
-  const struct IDENT * IDENT##_read(Entity entity) {                                                 \
-    const ITYPE * ptr;                                                                               \
-    alias_ecs_read_entity_component(Engine_ecs(), entity, IDENT##_component(), (const void **)&ptr); \
-    return DREF ptr;                                                                                 \
-  }                                                                                                  \
-  struct IDENT * IDENT##_write(Entity entity) {                                                      \
-    ITYPE * ptr;                                                                                     \
-    alias_ecs_write_entity_component(Engine_ecs(), entity, IDENT##_component(), (void **)&ptr);      \
-    return DREF ptr;                                                                                 \
-  }
+static void _init(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
+  struct PlayerControlMovement * player_control = (struct PlayerControlMovement *)data[0];
 
-#define COMPONENT(IDENT, ...) COMPONENT_impl(IDENT, struct IDENT, , ## __VA_ARGS__)
-#define COMPONENT_pinned(IDENT, ...) COMPONENT_impl(IDENT, struct IDENT *, *, ## __VA_ARGS__)
+  struct PlayerInputs * inputs = alias_malloc(alias_default_MemoryCB(), sizeof(*inputs), alignof(*inputs));
+  player_control->inputs = inputs;
 
-COMPONENT_pinned(
+  inputs->pause = INPUT_SIGNAL_UP(Binding_Pause);
+  inputs->left = INPUT_SIGNAL_PASS(Binding_PlayerLeft);
+  inputs->right = INPUT_SIGNAL_PASS(Binding_PlayerRight);
+  inputs->up = INPUT_SIGNAL_PASS(Binding_PlayerUp);
+  inputs->down = INPUT_SIGNAL_PASS(Binding_PlayerDown);
+
+  player_control->input_index = Engine_add_input_frontend(player_control->player_index, 5, &inputs->pause);
+}
+
+static void _cleanup(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
+  struct PlayerControlMovement * player_control = *(struct PlayerControlMovement **)data[0];
+
+  Engine_remove_input_frontend(player_control->player_index, player_control->input_index);
+
+  alias_free(alias_default_MemoryCB(), player_control->inputs, sizeof(player_control->inputs), alignof(player_control->inputs));
+}
+
+COMPONENT(
     PlayerControlMovement
   , .num_required_components = 1
   , .required_components = (alias_ecs_ComponentHandle[]) { Movement_component() }
+  , .init = { _init, NULL }
+  , .cleanup = { _cleanup, NULL }
   )
+

@@ -173,62 +173,29 @@ enum InputSignalType {
   InputSignal_Point,
 };
 
-struct InputSignalPass {
+struct InputSignal {
   enum InputSignalType type;
-  bool value;
-  uint32_t binding;
+  uint32_t bindings[2];
+  union {
+    bool boolean;
+    alias_pga2d_Direction direction;
+    alias_pga2d_Point point;
+  };
+  union {
+    bool up;
+    bool down;
+  } internal;
 };
 
-#define INPUT_SIGNAL_PASS(BINDING) (struct InputSignalPass) { .type = InputSignal_Pass, .binding = BINDING }
-
-struct InputSignalUp {
-  enum InputSignalType type;
-  bool value;
-  uint32_t binding;
-  bool _internal_1;
-};
-
-#define INPUT_SIGNAL_UP(BINDING) (struct InputSignalUp) { .type = InputSignal_Up, .binding = BINDING }
-
-struct InputSignalDown {
-  enum InputSignalType type;
-  bool value;
-  uint32_t binding;
-  bool _internal_1;
-};
-
-#define INPUT_SIGNAL_DOWN(BINDING) (struct InputSignalDown) { .type = InputSignal_Down, .binding = BINDING }
-
-struct InputSignalDirection {
-  enum InputSignalType type;
-  alias_pga2d_Direction value;
-  uint32_t binding_x;
-  uint32_t binding_y;
-};
-
-#define INPUT_SIGNAL_DIRECTION(BINDING_X, BINDING_Y) (struct InputSignalDirection) { .type = InputSignal_Direction, .binding_x = BINDING_X, .binding_y = BINDING_Y }
-
-struct InputSignalPoint {
-  enum InputSignalType type;
-  alias_pga2d_Point value;
-  uint32_t binding_x;
-  uint32_t binding_y;
-};
-
-#define INPUT_SIGNAL_POINT(BINDING_X, BINDING_Y) (struct InputSignalPoint) { .type = InputSignal_Point, .binding_x = BINDING_X, .binding_y = BINDING_Y }
-
-union InputSignal {
-  enum InputSignalType type;
-  struct InputSignalPass pass;
-  struct InputSignalUp up;
-  struct InputSignalDown down;
-  struct InputSignalDirection direction;
-  struct InputSignalPoint point;
-};
+#define INPUT_SIGNAL_PASS(BINDING) (struct InputSignal) { .type = InputSignal_Pass, .bindings[0] = BINDING }
+#define INPUT_SIGNAL_UP(BINDING) (struct InputSignal) { .type = InputSignal_Up, .bindings[0] = BINDING }
+#define INPUT_SIGNAL_DOWN(BINDING) (struct InputSignal) { .type = InputSignal_Down, .bindings[0] = BINDING }
+#define INPUT_SIGNAL_DIRECTION(BINDING_X, BINDING_Y) (struct InputSignal) { .type = InputSignal_Direction, .bindings[0] = BINDING_X, .bindings[1] = BINDING_Y }
+#define INPUT_SIGNAL_POINT(BINDING_X, BINDING_Y) (struct InputSignal) { .type = InputSignal_Point, .bindings[0] = BINDING_X, .bindings[1] = BINDING_Y }
 
 void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count, const struct InputBackendPair * pairs);
 
-uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, union InputSignal * * signals);
+uint32_t Engine_add_input_frontend(uint32_t player_index, uint32_t signal_count, struct InputSignal * signals);
 void Engine_remove_input_frontend(uint32_t player_index, uint32_t index);
 
 // event

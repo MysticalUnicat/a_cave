@@ -21,16 +21,12 @@ struct InputBackendPair main_input_backend[] = {
   { Keyboard_S, Binding_PlayerDown },
 };
 
-struct InputSignalUp menu_back = INPUT_SIGNAL_UP(Binding_Back);
-struct InputSignalUp menu_forward = INPUT_SIGNAL_UP(Binding_Forward);
-struct InputSignalPoint mouse_position = INPUT_SIGNAL_POINT(Binding_MouseX, Binding_MouseY);
-struct InputSignalDown mouse_left_click = INPUT_SIGNAL_DOWN(Binding_LeftClick);
-
-union InputSignal * _main_signals[] = {
-  (union InputSignal *)&menu_back,
-  (union InputSignal *)&menu_forward,
-  (union InputSignal *)&mouse_position
-};
+struct MainInputs main_inputs = {
+    .menu_back = INPUT_SIGNAL_UP(Binding_Back)
+  , .menu_forward = INPUT_SIGNAL_UP(Binding_Forward)
+  , .mouse_position = INPUT_SIGNAL_POINT(Binding_MouseX, Binding_MouseY)
+  , .mouse_left_click = INPUT_SIGNAL_DOWN(Binding_LeftClick)
+  };
 
 extern struct State intro_state;
 
@@ -39,7 +35,7 @@ int main(void) {
 
   Engine_set_player_input_backend(0, sizeof(main_input_backend) / sizeof(main_input_backend[0]), main_input_backend);
 
-  Engine_add_input_frontend(0, sizeof(_main_signals) / sizeof(_main_signals[0]), _main_signals);
+  Engine_add_input_frontend(0, 4, &main_inputs.menu_back);
 
   while(Engine_update()) {
   }

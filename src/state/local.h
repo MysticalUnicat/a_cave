@@ -17,7 +17,11 @@ enum Binding {
   Binding_PlayerDown,
 };
 
-extern struct InputSignalUp menu_back;
-extern struct InputSignalUp menu_forward;
-extern struct InputSignalPoint mouse_position;
-extern struct InputSignalDown mouse_left_click;
+struct MainInputs {
+  struct InputSignal menu_back;
+  struct InputSignal menu_forward;
+  struct InputSignal mouse_position;
+  struct InputSignal mouse_left_click;
+};
+
+extern struct MainInputs main_inputs;

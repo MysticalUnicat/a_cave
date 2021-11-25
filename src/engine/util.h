@@ -69,12 +69,32 @@ extern alias_ecs_Instance * Engine_ecs(void);
 #define DECLARE_TAG_COMPONENT(IDENT) \
   alias_ecs_ComponentHandle IDENT##_component(void);
 
-#define DEFINE_TAG_COMPONENT(IDENT)                                                  \
-  LAZY_GLOBAL(                                                                              \
-    alias_ecs_ComponentHandle,                                                              \
-    IDENT##_component,                                                                      \
+#define DEFINE_TAG_COMPONENT(IDENT)                                                                \
+  LAZY_GLOBAL(                                                                                     \
+    alias_ecs_ComponentHandle,                                                                     \
+    IDENT##_component,                                                                             \
     ECS(register_component, Engine_ecs(), &(alias_ecs_ComponentCreateInfo) { .size = 0 }, &inner); \
   )
+
+#define COMPONENT_impl(IDENT, ITYPE, DREF, ...)                                                      \
+  LAZY_GLOBAL(                                                                                       \
+    alias_ecs_ComponentHandle,                                                                       \
+    IDENT##_component,                                                                               \
+    ECS(register_component, Engine_ecs()                                                             \
+    , &(alias_ecs_ComponentCreateInfo) { .size = sizeof(ITYPE), ## __VA_ARGS__ }, &inner);           \
+  )                                                                                                  \
+  const struct IDENT * IDENT##_read(Entity entity) {                                                 \
+    const ITYPE * ptr;                                                                               \
+    alias_ecs_read_entity_component(Engine_ecs(), entity, IDENT##_component(), (const void **)&ptr); \
+    return DREF ptr;                                                                                 \
+  }                                                                                                  \
+  struct IDENT * IDENT##_write(Entity entity) {                                                      \
+    ITYPE * ptr;                                                                                     \
+    alias_ecs_write_entity_component(Engine_ecs(), entity, IDENT##_component(), (void **)&ptr);      \
+    return DREF ptr;                                                                                 \
+  }
+
+#define COMPONENT(IDENT, ...) COMPONENT_impl(IDENT, struct IDENT, , ## __VA_ARGS__)
 
 #define SPAWN_COMPONENT(...) SPAWN_COMPONENT_ __VA_ARGS__
 #define SPAWN_COMPONENT_(TYPE, ...) { .component = TYPE##_component(), .stride = sizeof(struct TYPE), .data = (void *)&(struct TYPE) { __VA_ARGS__ } },

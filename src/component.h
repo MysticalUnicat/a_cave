@@ -19,13 +19,17 @@ DECLARE_COMPONENT(Movement, {
   bool done;
 })
 
+struct PlayerInputs {
+  struct InputSignal pause;
+  struct InputSignal left;
+  struct InputSignal right;
+  struct InputSignal up;
+  struct InputSignal down;
+};
+
 DECLARE_COMPONENT(PlayerControlMovement, {
   uint32_t player_index;
   uint32_t input_index;
-
-  struct InputSignalUp pause;
-  struct InputSignalPass left;
-  struct InputSignalPass right;
-  struct InputSignalPass up;
-  struct InputSignalPass down;
+  struct PlayerInputs * inputs;
 })
+
