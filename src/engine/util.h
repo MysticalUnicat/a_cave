@@ -8,8 +8,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "pp.h"
-
 #define Entity alias_ecs_EntityHandle
 
 extern alias_ecs_Instance * Engine_ecs(void);
