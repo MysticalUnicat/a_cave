@@ -29,8 +29,8 @@ void _intro_frame(void * ud) {
     return;
   }
 
-  Engine_ui_center();
-    Engine_ui_image(&_intro_title_image);
+  //Engine_ui_center();
+  //  Engine_ui_image(&_intro_title_image);
 
   Engine_ui_center();
     Engine_ui_font_color(alias_Color_GRAY);

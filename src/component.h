@@ -6,7 +6,8 @@ DECLARE_COMPONENT(Movement, {
   enum MovementTarget {
     MovementTarget_None,
     MovementTarget_Point,
-    MovementTarget_Direction,
+    MovementTarget_LocalDirection,
+    MovementTarget_WorldDirection,
     MovementTarget_Entity
   } target;
   union {
@@ -25,6 +26,11 @@ struct PlayerInputs {
   struct InputSignal right;
   struct InputSignal up;
   struct InputSignal down;
+  struct InputSignal mouse_position;
+  struct InputSignal mouse_left_up;
+  struct InputSignal mouse_left_down;
+  struct InputSignal mouse_right_up;
+  struct InputSignal mouse_right_down;
 };
 
 DECLARE_COMPONENT(PlayerControlMovement, {
@@ -32,4 +38,3 @@ DECLARE_COMPONENT(PlayerControlMovement, {
   uint32_t input_index;
   struct PlayerInputs * inputs;
 })
-

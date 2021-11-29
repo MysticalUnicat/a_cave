@@ -3,21 +3,30 @@ cmake_minimum_required(VERSION 3.1)
 
 project(a_cave LANGUAGES C)
 
+set(BACKEND RAYLIB CACHE STRING "backend to use")
+
 add_subdirectory(ext/alias)
-add_subdirectory(ext/raylib)
 add_subdirectory(ext/libuv)
+
+if(${BACKEND} STREQUAL "RAYLIB")
+  add_subdirectory(ext/raylib)
+  set(BACKEND_LIBRARIES raylib)
+  set(BACKEND_SOURCE src/engine/backend_raylib.c)
+elseif(${BACKEND} STREQUAL "GLFW")
+  add_subdirectory(ext/glfw)
+  set(BACKEND_LIBRARIES glfw)
+  set(BACKEND_SOURCE src/engine/backend_glfw.c)
+else()
+  message(FATAL_ERROR "set BACKEND to be either RAYLIB or GLFW")
+endif()
 
 add_library(a_engine
   src/engine/cbuf.c
-  # src/engine/game.c
-  # src/engine/render.c
-  # src/engine/stats.c
-  # src/engine/texture.c
-  # src/engine/transform.c
-  # src/engine/physics.c
   src/engine/engine.c
+
+  ${BACKEND_SOURCE}
 )
-target_link_libraries(a_engine alias raylib uv_a)
+target_link_libraries(a_engine alias ${BACKEND_LIBRARIES} uv_a)
 
 add_executable(alias_town
   src/main.c

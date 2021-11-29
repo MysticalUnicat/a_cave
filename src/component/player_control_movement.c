@@ -12,8 +12,13 @@ static void _init(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHand
   inputs->right = INPUT_SIGNAL_PASS(Binding_PlayerRight);
   inputs->up = INPUT_SIGNAL_PASS(Binding_PlayerUp);
   inputs->down = INPUT_SIGNAL_PASS(Binding_PlayerDown);
+  inputs->mouse_position = INPUT_SIGNAL_POINT(Binding_MouseX, Binding_MouseY);
+  inputs->mouse_left_up = INPUT_SIGNAL_UP(Binding_LeftClick);
+  inputs->mouse_left_down = INPUT_SIGNAL_DOWN(Binding_LeftClick);
+  inputs->mouse_right_up = INPUT_SIGNAL_UP(Binding_RightClick);
+  inputs->mouse_right_down = INPUT_SIGNAL_DOWN(Binding_RightClick);
 
-  player_control->input_index = Engine_add_input_frontend(player_control->player_index, 5, &inputs->pause);
+  player_control->input_index = Engine_add_input_frontend(player_control->player_index, 10, &inputs->pause);
 }
 
 static void _cleanup(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {

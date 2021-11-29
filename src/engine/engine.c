@@ -1,27 +1,18 @@
 #include "engine.h"
 
+#include "backend.h"
+
 #include <alias/ui.h>
 #include <alias/data_structure/inline_list.h>
+#include <alias/data_structure/vector.h>
+
+#include <uchar.h>
 
 #define UI_NUM_VERTEXES (1024 * 1024)
 #define UI_NUM_INDEXES  (1024 * 1024)
 #define UI_NUM_GROUPS   1024
 
 #define USE_UV 0
-
-// why does this not put things in a namespace?!
-#define Image raylib_Image
-#define Color raylib_Color
-#include <raylib.h>
-#include <rlgl.h>
-#undef Image
-#undef Color
-
-const struct alias_Color alias_Color_RAYWHITE = (struct alias_Color) { 0.96, 0.96, 0.96, 0.96 };
-
-static inline raylib_Color alias_Color_to_raylib_Color(struct alias_Color c) {
-  return (raylib_Color) { c.r * 255.0, c.g * 255.0, c.b * 255.0, c.a * 255.0 };
-}
 
 #if USE_UV
 #include <uv.h>
@@ -38,11 +29,7 @@ static alias_ecs_Instance * _ecs;
 
 static alias_ui * _ui;
 static uint32_t _ui_indexes_data[UI_NUM_INDEXES];
-static struct _ui_Vertex {
-  float xy[2];
-  float rgba[4];
-  float st[2];
-} _ui_vertexes_data[UI_NUM_VERTEXES];
+static struct BackendUIVertex _ui_vertexes_data[UI_NUM_VERTEXES];
 static alias_memory_SubBuffer _ui_indexes = {
     .pointer = _ui_indexes_data
   , .count = UI_NUM_INDEXES
@@ -51,21 +38,21 @@ static alias_memory_SubBuffer _ui_indexes = {
   , .type_length = 1
 };
 static alias_memory_SubBuffer _ui_vertexes_xy = {
-    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, xy)
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct BackendUIVertex, xy)
   , .count = UI_NUM_VERTEXES
   , .stride = sizeof(_ui_vertexes_data[0])
   , .type_format = alias_memory_Format_Float32
   , .type_length = 2
 };
 static alias_memory_SubBuffer _ui_vertexes_rgba = {
-    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, rgba)
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct BackendUIVertex, rgba)
   , .count = UI_NUM_VERTEXES
   , .stride = sizeof(_ui_vertexes_data[0])
   , .type_format = alias_memory_Format_Float32
   , .type_length = 4
 };
 static alias_memory_SubBuffer _ui_vertexes_st = {
-    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct _ui_Vertex, st)
+    .pointer = (uint8_t *)_ui_vertexes_data + offsetof(struct BackendUIVertex, st)
   , .count = UI_NUM_VERTEXES
   , .stride = sizeof(_ui_vertexes_data[0])
   , .type_format = alias_memory_Format_Float32
@@ -85,8 +72,7 @@ void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * tit
   _screen_width = screen_width;
   _screen_height = screen_height;
 
-  InitWindow(screen_width, screen_height, title);
-  SetExitKey('Q');
+  Backend_init_window(screen_width, screen_height, title);
 
 #if USE_UV
   uv_loop_init(&_loop);
@@ -96,7 +82,7 @@ void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * tit
   uv_timer_init(&_loop, &_frame_timer);
   uv_timer_start(&_frame_timer, _frame_timer_f, 0, 16);
 #else
-  SetTargetFPS(60);
+  Backend_set_target_fps(60);
 #endif
 
   alias_ecs_create_instance(NULL, &_ecs);
@@ -119,7 +105,7 @@ static void _update_display(void);
 static bool _update(void) {
   _update_physics();
   _update_display();
-  if(WindowShouldClose()) {
+  if(Backend_should_exit()) {
     return false;
   }
   _update_input();
@@ -263,116 +249,6 @@ void Engine_remove_input_frontend(uint32_t player_index, uint32_t index) {
 }
 
 static void _update_input(void) {
-  static const int _to_raylib[] = {
-    [Keyboard_Apostrophe] =   KEY_APOSTROPHE,
-    [Keyboard_Comma] =        KEY_COMMA,
-    [Keyboard_Minus] =        KEY_MINUS,
-    [Keyboard_Period] =       KEY_PERIOD,
-    [Keyboard_Slash] =        KEY_SLASH,
-    [Keyboard_0] =            KEY_ZERO,
-    [Keyboard_1] =            KEY_ONE,
-    [Keyboard_2] =            KEY_TWO,
-    [Keyboard_3] =            KEY_THREE,
-    [Keyboard_4] =            KEY_FOUR,
-    [Keyboard_5] =            KEY_FIVE,
-    [Keyboard_6] =            KEY_SIX,
-    [Keyboard_7] =            KEY_SEVEN,
-    [Keyboard_8] =            KEY_EIGHT,
-    [Keyboard_9] =            KEY_NINE,
-    [Keyboard_Semicolon] =    KEY_SEMICOLON,
-    [Keyboard_Equal] =        KEY_EQUAL,
-    [Keyboard_A] =            KEY_A,
-    [Keyboard_B] =            KEY_B,
-    [Keyboard_C] =            KEY_C,
-    [Keyboard_D] =            KEY_D,
-    [Keyboard_E] =            KEY_E,
-    [Keyboard_F] =            KEY_F,
-    [Keyboard_G] =            KEY_G,
-    [Keyboard_H] =            KEY_H,
-    [Keyboard_I] =            KEY_I,
-    [Keyboard_J] =            KEY_J,
-    [Keyboard_K] =            KEY_K,
-    [Keyboard_L] =            KEY_L,
-    [Keyboard_M] =            KEY_M,
-    [Keyboard_N] =            KEY_N,
-    [Keyboard_O] =            KEY_O,
-    [Keyboard_P] =            KEY_P,
-    [Keyboard_Q] =            KEY_Q,
-    [Keyboard_R] =            KEY_R,
-    [Keyboard_S] =            KEY_S,
-    [Keyboard_T] =            KEY_T,
-    [Keyboard_U] =            KEY_U,
-    [Keyboard_V] =            KEY_V,
-    [Keyboard_W] =            KEY_X,
-    [Keyboard_X] =            KEY_W,
-    [Keyboard_Y] =            KEY_Y,
-    [Keyboard_Z] =            KEY_Z,
-    [Keyboard_Space] =        KEY_SPACE,
-    [Keyboard_Escape] =       KEY_ESCAPE,
-    [Keyboard_Enter] =        KEY_ENTER,
-    [Keyboard_Tab] =          KEY_TAB,
-    [Keyboard_Backspace] =    KEY_BACKSPACE,
-    [Keyboard_Insert] =       KEY_INSERT,
-    [Keyboard_Delete] =       KEY_DELETE,
-    [Keyboard_Right] =        KEY_RIGHT,
-    [Keyboard_Left] =         KEY_LEFT,
-    [Keyboard_Down] =         KEY_DOWN,
-    [Keyboard_Up] =           KEY_UP,
-    [Keyboard_PageUp] =       KEY_PAGE_UP,
-    [Keyboard_PageDown] =     KEY_PAGE_DOWN,
-    [Keyboard_Home] =         KEY_HOME,
-    [Keyboard_End] =          KEY_END,
-    [Keyboard_CapsLock] =     KEY_CAPS_LOCK,
-    [Keyboard_ScrollLock] =   KEY_SCROLL_LOCK,
-    [Keyboard_NumLock] =      KEY_NUM_LOCK,
-    [Keyboard_PrintScreen] =  KEY_PRINT_SCREEN,
-    [Keyboard_Pause] =        KEY_PAUSE,
-    [Keyboard_F1] =           KEY_F1,
-    [Keyboard_F2] =           KEY_F2,
-    [Keyboard_F3] =           KEY_F3,
-    [Keyboard_F4] =           KEY_F4,
-    [Keyboard_F5] =           KEY_F5,
-    [Keyboard_F6] =           KEY_F6,
-    [Keyboard_F7] =           KEY_F7,
-    [Keyboard_F8] =           KEY_F8,
-    [Keyboard_F9] =           KEY_F9,
-    [Keyboard_F10] =          KEY_F10,
-    [Keyboard_F11] =          KEY_F11,
-    [Keyboard_F12] =          KEY_F12,
-    [Keyboard_LeftShift] =    KEY_LEFT_SHIFT,
-    [Keyboard_LeftControl] =  KEY_LEFT_CONTROL,
-    [Keyboard_Leftalt] =      KEY_LEFT_ALT,
-    [Keyboard_LeftMeta] =     KEY_LEFT_SUPER,
-    [Keyboard_RightShift] =   KEY_RIGHT_SHIFT,
-    [Keyboard_RightControl] = KEY_RIGHT_CONTROL,
-    [Keyboard_RightAlt] =     KEY_RIGHT_ALT,
-    [Keyboard_RightMeta] =    KEY_RIGHT_SUPER,
-    [Keyboard_Menu] =         KEY_KB_MENU,
-    [Keyboard_LeftBracket] =  KEY_LEFT_BRACKET,
-    [Keyboard_Backslash] =    KEY_BACKSLASH,
-    [Keyboard_RightBracket] = KEY_RIGHT_BRACKET,
-    [Keyboard_Grave] =        KEY_GRAVE,
-    [Keyboard_Pad_0] =        KEY_KP_0,
-    [Keyboard_Pad_1] =        KEY_KP_1,
-    [Keyboard_Pad_2] =        KEY_KP_2,
-    [Keyboard_Pad_3] =        KEY_KP_3,
-    [Keyboard_Pad_4] =        KEY_KP_4,
-    [Keyboard_Pad_5] =        KEY_KP_5,
-    [Keyboard_Pad_6] =        KEY_KP_6,
-    [Keyboard_Pad_7] =        KEY_KP_7,
-    [Keyboard_Pad_8] =        KEY_KP_8,
-    [Keyboard_Pad_9] =        KEY_KP_9,
-    [Keyboard_Pad_Period] =   KEY_KP_DECIMAL,
-    [Keyboard_Pad_Divide] =   KEY_KP_DIVIDE,
-    [Keyboard_Pad_Multiply] = KEY_KP_MULTIPLY,
-    [Keyboard_Pad_Minus] =    KEY_KP_SUBTRACT,
-    [Keyboard_Pad_Add] =      KEY_KP_ADD,
-    [Keyboard_Pad_Enter] =    KEY_KP_ENTER,
-    [Keyboard_Pad_Equal] =    KEY_KP_EQUAL,
-    [Mouse_Left_Button] =     MOUSE_LEFT_BUTTON,
-    [Mouse_Right_Button] =    MOUSE_RIGHT_BUTTON
-  };
-
   alias_memory_clear(_input_bindings, sizeof(*_input_bindings) * _input_binding_count);
 
   for(uint32_t i = 0; i < _input_backend_pair_count; i++) {
@@ -381,20 +257,20 @@ static void _update_input(void) {
 
     switch(source) {
     case Keyboard_Apostrophe ... Keyboard_Pad_Equal:
-      if(IsKeyDown(_to_raylib[source])) {
+      if(Backend_get_key_down(source)) {
         *binding = alias_R_ONE;
       }
       break;
     case Mouse_Left_Button ... Mouse_Right_Button:
-      if(IsMouseButtonDown(_to_raylib[source])) {
+      if(Backend_get_mouse_button_down(source)) {
         *binding = alias_R_ONE;
       }
       break;
     case Mouse_Position_X:
-      *binding = GetMouseX();
+      *binding = Backend_get_mouse_position_x();
       break;
     case Mouse_Position_Y:
-      *binding = GetMouseY();
+      *binding = Backend_get_mouse_position_y();
       break;
     case InputSource_COUNT:
       break;
@@ -502,7 +378,7 @@ void Engine_set_physics_speed(alias_R speed) {
 }
 
 alias_R Engine_time(void) {
-  return GetTime();
+  return Backend_get_time();
 }
 
 static void _update_physics(void) {
@@ -511,7 +387,7 @@ static void _update_physics(void) {
   static float p_time = 0.0f;
   static float s_time = 0.0f;
 
-  s_time += GetFrameTime() * _physics_speed;
+  s_time += Backend_get_frame_time() * _physics_speed;
 
   if(p_time >= s_time) {
     alias_transform_update2d_serial(Engine_ecs(), Engine_transform_bundle());
@@ -531,7 +407,8 @@ static void _update_physics(void) {
 // ====================================================================================================================
 // Resource ===========================================================================================================
 enum ResourceType {
-  ResourceType_Image
+    ResourceType_Invalid
+  , ResourceType_Image
 };
 
 struct LoadedResource {
@@ -541,29 +418,27 @@ struct LoadedResource {
   uint32_t id, gen;
 
   union {
-    struct {
-      Texture2D raylib;
-      uint32_t width;
-      uint32_t height;
-    } image;
+    struct BackendImage image;
   };
 };
 
 alias_InlineList _free_resources = ALIAS_INLINE_LIST_INIT(_free_resources);
 alias_InlineList _inactive_resources = ALIAS_INLINE_LIST_INIT(_inactive_resources);
 alias_InlineList _active_resources = ALIAS_INLINE_LIST_INIT(_active_resources);
+alias_Vector(struct LoadedResource *) _resources = ALIAS_VECTOR_INIT;
 
 static uint32_t _resource_id = 1, _resource_gen = 1;
 
 void _free_resource(struct LoadedResource * resource) {
   switch(resource->type) {
   case ResourceType_Image:
-    UnloadTexture(resource->image.raylib);
+    BackendImage_unload(&resource->image);
     break;
   }
 
   alias_InlineList_remove_self(&resource->list);
   alias_InlineList_push(&_free_resources, &resource->list);
+  _resources.data[resource->id - 1] = NULL;
 }
 
 void _resources_gc(void) {
@@ -580,13 +455,17 @@ struct LoadedResource * _allocate_resource(enum ResourceType type) {
   if(alias_InlineList_is_empty(&_free_resources)) {
     resource = alias_malloc(alias_default_MemoryCB(), sizeof(*resource), alignof(*resource));
     alias_InlineList_init(&resource->list);
+    resource->id = _resource_id++;
+
+    alias_Vector_space_for(&_resources, alias_default_MemoryCB(), 1);
+    *alias_Vector_push(&_resources) = NULL;
   } else {
     resource = ALIAS_INLINE_LIST_CONTAINER(alias_InlineList_pop(&_free_resources), struct LoadedResource, list);
   }
   alias_InlineList_push(&_active_resources, &resource->list);
   resource->type = type;
-  resource->id = _resource_id++;
   resource->gen = _resource_gen;
+  _resources.data[resource->id - 1] = resource;
   return resource;
 }
 
@@ -598,6 +477,10 @@ void _touch_resource(struct LoadedResource * resource) {
   }
 }
 
+struct LoadedResource * _loaded_resource_by_id(uint32_t id) {
+  return _resources.data[id - 1];
+}
+
 struct LoadedResource * _load_image(struct Image * img) {
   struct LoadedResource * resource;
 
@@ -606,9 +489,7 @@ struct LoadedResource * _load_image(struct Image * img) {
     snprintf(path, sizeof(path), "assets/%s", img->path);
 
     resource = _allocate_resource(ResourceType_Image);
-    resource->image.raylib = LoadTexture(path);
-    resource->image.width = resource->image.raylib.width;
-    resource->image.height = resource->image.raylib.height;
+    BackendImage_load(&resource->image, path);
     img->resource = resource;
     img->resource_id = resource->id;
   } else {
@@ -616,6 +497,116 @@ struct LoadedResource * _load_image(struct Image * img) {
   }
 
   return img->resource;
+}
+
+// ====================================================================================================================
+// Font ===============================================================================================================
+enum FontAtlasType {
+    FontAtlasType_Bitmap
+  , FontAtlasType_SDF
+};
+
+struct FontGlyph {
+  uint32_t codepoint;
+
+  float advance;
+
+  float plane_left;
+  float plane_bottom;
+  float plane_right;
+  float plane_top;
+
+  float atlas_left;
+  float atlas_bottom;
+  float atlas_right;
+  float atlas_top;
+};
+
+struct Font {
+  struct Image atlas;
+  enum FontAtlasType atlas_type;
+  uint32_t num_glyphs;
+  const struct FontGlyph * glyphs;
+};
+
+const struct FontGlyph * Font_find_glyph(const struct Font * font, const char * text) {
+  // TODO handle utf8
+  char32_t c = *text;
+
+  // TODO bsearch
+  for(uint32_t i = 0; i < font->num_glyphs; i++) {
+    if(font->glyphs[i].codepoint == c) {
+      return &font->glyphs[i];
+    }
+  }
+
+  // return space
+  return &font->glyphs[0];
+}
+
+void Font_draw(struct Font * font, const char * text, float x, float y, float size, float spacing, alias_Color color) {
+  #define FONT_DRAW_CHARACTERS_PER_BATCH 128
+
+  struct BackendUIVertex vertexes[4 * FONT_DRAW_CHARACTERS_PER_BATCH];
+  uint32_t indexes[6 * FONT_DRAW_CHARACTERS_PER_BATCH];
+  uint32_t i = 0;
+
+  struct BackendImage * image = &_load_image(&font->atlas)->image;
+  float s_scale = alias_R_ONE / image->width;
+  float t_scale = alias_R_ONE / image->height;
+  
+  while(*text) {
+    const struct FontGlyph * glyph = Font_find_glyph(font, text);
+
+    // TODO utf8 advance
+    text++;
+
+    #define EMIT(I, V, H) \
+    vertexes[i * 4 + I].xy[0] = x + glyph->plane_##H * size; \
+    vertexes[i * 4 + I].xy[1] = y - glyph->plane_##V * size; \
+    vertexes[i * 4 + I].rgba[0] = color.r; \
+    vertexes[i * 4 + I].rgba[1] = color.g; \
+    vertexes[i * 4 + I].rgba[2] = color.b; \
+    vertexes[i * 4 + I].rgba[3] = color.a; \
+    vertexes[i * 4 + I].st[0] = glyph->atlas_##H * s_scale; \
+    vertexes[i * 4 + I].st[1] = 1.0f - (glyph->atlas_##V * t_scale);
+    EMIT(0, top, left)
+    EMIT(1, top, right)
+    EMIT(2, bottom, right)
+    EMIT(3, bottom, left)
+    #undef EMIT
+
+    indexes[i * 6 + 0] = i * 4 + 0;
+    indexes[i * 6 + 1] = i * 4 + 2;
+    indexes[i * 6 + 2] = i * 4 + 1;
+    indexes[i * 6 + 3] = i * 4 + 2;
+    indexes[i * 6 + 4] = i * 4 + 0;
+    indexes[i * 6 + 5] = i * 4 + 3;
+
+    x += glyph->advance * size + spacing;
+    i++;
+
+    if(i >= FONT_DRAW_CHARACTERS_PER_BATCH) {
+      BackendUIVertex_render(image, vertexes, 6 * FONT_DRAW_CHARACTERS_PER_BATCH, indexes);
+      i = 0;
+    }
+  }
+
+  BackendUIVertex_render(image, vertexes, 6 * i, indexes);
+}
+
+void Font_measure(struct Font * font, const char * text, float size, float spacing, float * width, float * height) {
+  *height = size;
+  *width = 0;
+
+  while(*text) {
+    const struct FontGlyph * glyph = Font_find_glyph(font, text);
+
+    // TODO utf8 advance
+    text++;
+
+    (*width) += glyph->advance * size + spacing;
+  }
 }
 
 // ====================================================================================================================
@@ -657,23 +648,166 @@ QUERY(_draw_rectangles
     box[2] = alias_pga2d_sandwich_bm(box[2], t->motor);
     box[3] = alias_pga2d_sandwich_bm(box[3], t->motor);
 
-    Vector2 points[] = {
-      { alias_pga2d_point_x(box[0]), alias_pga2d_point_y(box[0]) },
-      { alias_pga2d_point_x(box[1]), alias_pga2d_point_y(box[1]) },
-      { alias_pga2d_point_x(box[2]), alias_pga2d_point_y(box[2]) },
-      { alias_pga2d_point_x(box[3]), alias_pga2d_point_y(box[3]) },
+    struct BackendUIVertex vertexes[] = {
+        { .xy[0] = alias_pga2d_point_x(box[0]), .xy[1] = alias_pga2d_point_y(box[0]), .rgba = { r->color.r, r->color.g, r->color.b, r->color.a } }
+      , { .xy[0] = alias_pga2d_point_x(box[1]), .xy[1] = alias_pga2d_point_y(box[1]), .rgba = { r->color.r, r->color.g, r->color.b, r->color.a } }
+      , { .xy[0] = alias_pga2d_point_x(box[2]), .xy[1] = alias_pga2d_point_y(box[2]), .rgba = { r->color.r, r->color.g, r->color.b, r->color.a } }
+      , { .xy[0] = alias_pga2d_point_x(box[3]), .xy[1] = alias_pga2d_point_y(box[3]), .rgba = { r->color.r, r->color.g, r->color.b, r->color.a } }
     };
 
-    DrawTriangle(points[0], points[1], points[2], alias_Color_to_raylib_Color(r->color));
-    DrawTriangle(points[0], points[2], points[3], alias_Color_to_raylib_Color(r->color));
+    uint32_t indexes[] = { 0, 1, 2, 0, 2, 3 };
+
+    BackendUIVertex_render(NULL, vertexes, 6, indexes);
   )
 )
+
+void replacement_DrawCircle(float x, float y, float radius, alias_Color color) {
+#define NUM_CIRCLE_SEGMENTS 32
+
+  struct BackendUIVertex vertexes[NUM_CIRCLE_SEGMENTS];
+  uint32_t indexes[3 * (NUM_CIRCLE_SEGMENTS - 2)];
+
+  for(uint32_t i = 0; i < NUM_CIRCLE_SEGMENTS; i++) {
+    alias_R angle = (alias_R)i / NUM_CIRCLE_SEGMENTS;
+    alias_R s = alias_R_sin(angle);
+    alias_R c = alias_R_cos(angle);
+    vertexes[i].xy[0] = x + s * radius;
+    vertexes[i].xy[1] = y + c * radius;
+    vertexes[i].rgba[0] = color.r;
+    vertexes[i].rgba[1] = color.g;
+    vertexes[i].rgba[2] = color.b;
+    vertexes[i].rgba[3] = color.a;
+    vertexes[i].st[0] = 0;
+    vertexes[i].st[1] = 0;
+
+    if(i >= 2) {
+      indexes[(i - 2) * 3 + 0] = i - 2;
+      indexes[(i - 2) * 3 + 1] = i - 1;
+      indexes[(i - 2) * 3 + 2] = i - 0;
+    }
+  }
+
+  BackendUIVertex_render(NULL, vertexes, 3 * (NUM_CIRCLE_SEGMENTS - 2), indexes);
+}
+
+static struct FontGlyph BreeSerif_glyphs[] = {
+   { 32,0.20000000000000001,0,0,0,0,0,0,0,0 }
+ , { 33,0.27700000000000002,0.049734396671289864,-0.038253814147018048,0.22726560332871013,0.71625381414701805,0.5,178.5,8.5,212.5 }
+ , { 34,0.34900000000000003,0.040851595006934839,0.41685159500693481,0.30714840499306523,0.68314840499306528,226.5,12.5,238.5,24.5 }
+ , { 35,0.53400000000000003,0.0042988904299583871,-0.019275312066574173,0.51470110957004156,0.62427531206657416,203.5,52.5,226.5,81.5 }
+ , { 36,0.53500000000000003,0.03749029126213594,-0.10473231622746189,0.50350970873786416,0.76073231622746185,127.5,216.5,148.5,255.5 }
+ , { 37,0.80100000000000005,0.013150485436893244,-0.033562413314840507,0.78984951456310692,0.67656241331484057,173.5,146.5,208.5,178.5 }
+ , { 38,0.71399999999999997,0.034128987517337055,-0.055753814147018056,0.69987101248266315,0.69875381414701809,8.5,178.5,38.5,212.5 }
+ , { 39,0.20500000000000002,0.035925797503467395,0.41685159500693481,0.16907420249653257,0.68314840499306528,249.5,200.5,255.5,212.5 }
+ , { 40,0.33100000000000002,0.049351595006934812,-0.18951941747572815,0.31564840499306518,0.74251941747572825,15.5,213.5,27.5,255.5 }
+ , { 41,0.33100000000000002,0.015351595006934809,-0.18751941747572815,0.2816484049930652,0.74451941747572825,40.5,213.5,52.5,255.5 }
+ , { 42,0.45200000000000001,0.025777392510402224,0.39387309292649098,0.42522260748959784,0.77112690707350906,188.5,7.5,206.5,24.5 }
+ , { 43,0.53500000000000003,0.045085991678224697,0.09358599167822472,0.48891400832177534,0.53741400832177533,146.5,4.5,166.5,24.5 }
+ , { 44,0.24099999999999999,0.01913869625520109,-0.17433980582524275,0.2188613037447989,0.13633980582524272,244.5,118.5,253.5,132.5 }
+ , { 45,0.32200000000000001,0.016755894590846056,0.22142579750346741,0.30524410540915398,0.35457420249653265,232.5,218.5,245.5,224.5 }
+ , { 46,0.22600000000000001,0.024234396671289866,-0.032265603328710125,0.20176560332871013,0.14526560332871011,224.5,216.5,232.5,224.5 }
+ , { 47,0.42799999999999999,-0.0089140083217753002,-0.12132801664355065,0.43491400832177535,0.76632801664355066,87.5,215.5,107.5,255.5 }
+ , { 48,0.53500000000000003,0.02289459084604718,-0.031562413314840478,0.51110540915395286,0.67856241331484057,208.5,146.5,230.5,178.5 }
+ , { 49,0.45400000000000001,0.025181692094313476,-0.021966712898751725,0.44681830790568661,0.66596671289875176,194.5,113.5,213.5,144.5 }
+ , { 50,0.51300000000000001,0.047681692094313478,-0.015466712898751732,0.46931830790568663,0.67246671289875182,211.5,81.5,230.5,112.5 }
+ , { 51,0.52200000000000002,0.017990291262135919,-0.033062413314840507,0.48400970873786414,0.67706241331484063,230.5,146.5,251.5,178.5 }
+ , { 52,0.53600000000000003,0.028894590846047188,-0.014466712898751725,0.51710540915395287,0.67346671289875182,67.5,50.5,89.5,81.5 }
+ , { 53,0.50700000000000001,0.015585991678224715,-0.025253814147018012,0.45941400832177531,0.72925381414701806,98.5,178.5,118.5,212.5 }
+ , { 54,0.53400000000000003,0.038490291262135955,-0.025062413314840479,0.50450970873786416,0.68506241331484063,0.5,112.5,21.5,144.5 }
+ , { 55,0.47500000000000003,0.0059902912621359475,-0.021966712898751725,0.47200970873786419,0.66596671289875176,120.5,50.5,141.5,81.5 }
+ , { 56,0.53500000000000003,0.035490291262135931,-0.032062413314840471,0.50150970873786416,0.67806241331484063,21.5,112.5,42.5,144.5 }
+ , { 57,0.53500000000000003,0.033990291262135951,-0.032562413314840506,0.50000970873786421,0.67756241331484057,71.5,112.5,92.5,144.5 }
+ , { 58,0.22600000000000001,0.024234396671289866,-0.036892510402219109,0.20176560332871013,0.51789251040221929,168.5,25.5,176.5,50.5 }
+ , { 59,0.24099999999999999,0.014042995839112338,-0.17346671289875171,0.23595700416088766,0.51446671289875179,239.5,181.5,249.5,212.5 }
+ , { 60,0.53500000000000003,0.050085991678224695,0.085490291262135934,0.49391400832177534,0.55150970873786409,106.5,3.5,126.5,24.5 }
+ , { 61,0.53500000000000003,0.045585991678224684,0.15066019417475729,0.48941400832177534,0.4613398058252427,206.5,10.5,226.5,24.5 }
+ , { 62,0.53500000000000003,0.050085991678224695,0.085490291262135934,0.49391400832177534,0.55150970873786409,126.5,3.5,146.5,24.5 }
+ , { 63,0.433,0.018777392510402252,-0.038253814147018048,0.41822260748959783,0.71625381414701805,197.5,178.5,215.5,212.5 }
+ , { 64,0.95300000000000007,0.05436338418862692,-0.20523231622746188,0.89763661581137311,0.66023231622746192,154.5,216.5,192.5,255.5 }
+ , { 65,0.66200000000000003,-0.012966712898751703,-0.011466712898751711,0.67496671289875176,0.67646671289875182,224.5,224.5,255.5,255.5 }
+ , { 66,0.60199999999999998,0.014011789181692108,-0.011466712898751711,0.59098821081830799,0.67646671289875182,0.5,50.5,26.5,81.5 }
+ , { 67,0.60199999999999998,0.018607489597780892,-0.034158113730929258,0.57339251040221928,0.69815811373092929,71.5,145.5,96.5,178.5 }
+ , { 68,0.66500000000000004,0.018820388349514553,-0.011466712898751711,0.64017961165048543,0.67646671289875182,183.5,81.5,211.5,112.5 }
+ , { 69,0.54900000000000004,0.016298890429958406,-0.011466712898751711,0.52670110957004157,0.67646671289875182,160.5,81.5,183.5,112.5 }
+ , { 70,0.54300000000000004,0.022798890429958397,-0.011466712898751711,0.53320110957004163,0.67646671289875182,137.5,81.5,160.5,112.5 }
+ , { 71,0.64100000000000001,0.028416088765603319,-0.033658113730929265,0.62758391123439672,0.69865811373092923,96.5,145.5,123.5,178.5 }
+ , { 72,0.71199999999999997,0.014033287101248293,-0.011466712898751711,0.70196671289875179,0.67646671289875182,69.5,81.5,100.5,112.5 }
+ , { 73,0.307,0.011255894590846057,-0.011466712898751711,0.29974410540915397,0.67646671289875182,56.5,81.5,69.5,112.5 }
+ , { 74,0.47400000000000003,0.010490291262135942,-0.029062413314840486,0.47650970873786413,0.68106241331484063,92.5,112.5,113.5,144.5 }
+ , { 75,0.622,0.011320388349514564,-0.011466712898751711,0.63267961165048547,0.67646671289875182,0.5,81.5,28.5,112.5 }
+ , { 76,0.53700000000000003,0.014298890429958404,-0.011466712898751711,0.52470110957004157,0.67646671289875182,163.5,50.5,186.5,81.5 }
+ , { 77,0.83399999999999996,0.0064590846047157041,-0.011466712898751711,0.8275409153952844,0.67646671289875182,100.5,81.5,137.5,112.5 }
+ , { 78,0.70499999999999996,0.012033287101248282,-0.011466712898751711,0.69996671289875179,0.67646671289875182,213.5,113.5,244.5,144.5 }
+ , { 79,0.66400000000000003,0.021320388349514573,-0.034158113730929258,0.64267961165048537,0.69815811373092929,123.5,145.5,151.5,178.5 }
+ , { 80,0.58999999999999997,0.018607489597780892,-0.011466712898751711,0.57339251040221928,0.67646671289875182,169.5,113.5,194.5,144.5 }
+ , { 81,0.66400000000000003,0.017437586685159524,-0.17723231622746186,0.72756241331484062,0.68823231622746184,192.5,216.5,224.5,255.5 }
+ , { 82,0.626,0.013320388349514576,-0.011466712898751711,0.63467961165048548,0.67646671289875182,28.5,81.5,56.5,112.5 }
+ , { 83,0.52200000000000002,0.022394590846047179,-0.034158113730929258,0.51060540915395292,0.69815811373092929,151.5,145.5,173.5,178.5 }
+ , { 84,0.55300000000000005,-0.00089251040221912173,-0.011466712898751711,0.55389251040221932,0.67646671289875182,230.5,81.5,255.5,112.5 }
+ , { 85,0.65900000000000003,0.009724687933425822,-0.029062413314840486,0.65327531206657419,0.68106241331484063,42.5,112.5,71.5,144.5 }
+ , { 86,0.65400000000000003,-0.016966712898751724,-0.011466712898751711,0.67096671289875176,0.67646671289875182,89.5,50.5,120.5,81.5 }
+ , { 87,0.88500000000000001,-0.012423717059639388,-0.011466712898751711,0.89742371705963941,0.67646671289875182,26.5,50.5,67.5,81.5 }
+ , { 88,0.621,-0.011275312066574197,-0.011466712898751711,0.63227531206657417,0.67646671289875182,140.5,113.5,169.5,144.5 }
+ , { 89,0.57000000000000006,-0.014583911234396675,-0.011466712898751711,0.58458391123439679,0.67646671289875182,113.5,113.5,140.5,144.5 }
+ , { 90,0.53300000000000003,0.018894590846047173,-0.011466712898751711,0.50710540915395297,0.67646671289875182,141.5,50.5,163.5,81.5 }
+ , { 91,0.32500000000000001,0.062947295423023589,-0.18092371705963939,0.30705270457697648,0.72892371705963943,65.5,214.5,76.5,255.5 }
+ , { 92,0.44,-0.0019140083217753024,-0.12032801664355065,0.44191400832177535,0.76732801664355066,107.5,215.5,127.5,255.5 }
+ , { 93,0.32500000000000001,0.017947295423023576,-0.18092371705963939,0.26205270457697638,0.72892371705963943,76.5,214.5,87.5,255.5 }
+ , { 94,0.55300000000000005,0.034894590846047173,0.26868169209431347,0.52310540915395287,0.6903183079056866,166.5,5.5,188.5,24.5 }
+ , { 95,0.5,-0.016296809986130371,-0.16597850208044385,0.51629680998613037,-0.05502149791955617,196.5,36.5,220.5,41.5 }
+ , { 96,0.5,0.14304299583911237,0.54035159500693486,0.36495700416088767,0.80664840499306523,244.5,132.5,254.5,144.5 }
+ , { 97,0.56700000000000006,0.023203190013869623,-0.02489251040221914,0.55579680998613035,0.52989251040221919,144.5,25.5,168.5,50.5 }
+ , { 98,0.55600000000000005,0.0012031900138696284,-0.027253814147018014,0.53379680998613033,0.72725381414701806,0.5,144.5,24.5,178.5 }
+ , { 99,0.47100000000000003,0.01508599167822469,-0.025392510402219137,0.45891400832177531,0.52939251040221913,86.5,25.5,106.5,50.5 }
+ , { 100,0.56800000000000006,0.025203190013869631,-0.027253814147018014,0.55779680998613035,0.72725381414701806,215.5,178.5,239.5,212.5 }
+ , { 101,0.48399999999999999,0.0210859916782247,-0.02489251040221914,0.46491400832177532,0.52989251040221919,176.5,25.5,196.5,50.5 }
+ , { 102,0.37,-0.0018183079056865274,-0.015753814147018021,0.41981830790568658,0.73875381414701802,178.5,178.5,197.5,212.5 }
+ , { 103,0.54400000000000004,0.013394590846047175,-0.22525381414701801,0.50160540915395291,0.52925381414701811,156.5,178.5,178.5,212.5 }
+ , { 104,0.59999999999999998,0.014511789181692119,-0.020753814147018042,0.59148821081830794,0.73375381414701801,130.5,178.5,156.5,212.5 }
+ , { 105,0.29599999999999999,0.018851595006934823,-0.018753814147018034,0.28514840499306526,0.73575381414701801,118.5,178.5,130.5,212.5 }
+ , { 106,0.28300000000000003,-0.099435506241331503,-0.22561511789181693,0.23343550624133147,0.72861511789181688,0.5,212.5,15.5,255.5 }
+ , { 107,0.55600000000000005,0.020703190013869645,-0.020753814147018042,0.5532968099861304,0.73375381414701801,74.5,178.5,98.5,212.5 }
+ , { 108,0.29799999999999999,0.016851595006934821,-0.020753814147018042,0.28314840499306526,0.73375381414701801,62.5,178.5,74.5,212.5 }
+ , { 109,0.86599999999999999,0.011863384188626909,-0.01839251040221913,0.85513661581137312,0.53639251040221914,106.5,25.5,144.5,50.5 }
+ , { 110,0.59999999999999998,0.012011789181692096,-0.01839251040221913,0.58898821081830799,0.53639251040221914,226.5,56.5,252.5,81.5 }
+ , { 111,0.52800000000000002,0.019394590846047173,-0.036988210818307901,0.50760540915395291,0.53998821081830795,0.5,24.5,22.5,50.5 }
+ , { 112,0.56800000000000006,0.0097031900138696454,-0.221753814147018,0.54229680998613039,0.53275381414701817,38.5,178.5,62.5,212.5 }
+ , { 113,0.55100000000000005,0.024203190013869627,-0.221753814147018,0.55679680998613035,0.53275381414701817,24.5,144.5,48.5,178.5 }
+ , { 114,0.46200000000000002,0.0095859916782246885,-0.01839251040221913,0.45341400832177536,0.53639251040221914,66.5,25.5,86.5,50.5 }
+ , { 115,0.45100000000000001,0.032777392510402223,-0.02489251040221914,0.43222260748959779,0.52989251040221919,48.5,25.5,66.5,50.5 }
+ , { 116,0.377,0.006873092926491008,-0.035371012482662972,0.38412690707350911,0.63037101248266303,186.5,51.5,203.5,81.5 }
+ , { 117,0.59099999999999997,0.0065117891816921054,-0.032392510402219139,0.58348821081830793,0.52239251040221912,22.5,25.5,48.5,50.5 }
+ , { 118,0.55800000000000005,-0.0094882108183078854,-0.014796809986130368,0.56748821081830791,0.51779680998613042,20.5,0.5,46.5,24.5 }
+ , { 119,0.79500000000000004,-0.0019452149791955779,-0.014796809986130368,0.79694521497919546,0.51779680998613042,46.5,0.5,82.5,24.5 }
+ , { 120,0.53400000000000003,-0.00129680998613037,-0.014796809986130368,0.53129680998613038,0.51779680998613042,82.5,0.5,106.5,24.5 }
+ , { 121,0.57300000000000006,0.0097988904299584085,-0.23275381414701804,0.52020110957004162,0.52175381414701805,48.5,144.5,71.5,178.5 }
+ , { 122,0.48299999999999998,0.022085991678224687,-0.014796809986130368,0.46591400832177532,0.51779680998613042,0.5,0.5,20.5,24.5 }
+ , { 123,0.34000000000000002,0.029755894590846054,-0.19201941747572812,0.31824410540915399,0.7400194174757283,52.5,213.5,65.5,255.5 }
+ , { 124,0.27400000000000002,0.070425797503467405,-0.10323231622746189,0.2035742024965326,0.7622323162274619,148.5,216.5,154.5,255.5 }
+ , { 125,0.34000000000000002,0.021755894590846054,-0.19201941747572812,0.31024410540915398,0.7400194174757283,27.5,213.5,40.5,255.5 }
+ , { 126,0.59799999999999998,0.032703190013869635,0.20313869625520112,0.56529680998613041,0.40286130374479895,196.5,41.5,220.5,50.5 }
+};
+
+struct Font BreeSerif = {
+    .atlas      = { .path = "breeserif_soft.png" }
+  , .atlas_type = FontAtlasType_Bitmap
+  , .num_glyphs = sizeof(BreeSerif_glyphs) / sizeof(BreeSerif_glyphs[0])
+  , .glyphs     = BreeSerif_glyphs
+};
+
+void replacement_DrawText(const char * text, float x, float y, float size, alias_Color color) {
+  Font_draw(&BreeSerif, text, x, y, size, 0, color);
+}
+
+void replacement_MeasureTextEx(const char * text, float size, float spacing, float * width, float * height) {
+  Font_measure(&BreeSerif, text, size, spacing, width, height);
+}
 
 QUERY(_draw_circles
   , read(alias_LocalToWorld2D, transform)
   , read(DrawCircle, c)
   , action(
-    DrawCircle(alias_pga2d_point_x(transform->position), alias_pga2d_point_y(transform->position), c->radius, alias_Color_to_raylib_Color(c->color));
+    replacement_DrawCircle(alias_pga2d_point_x(transform->position), alias_pga2d_point_y(transform->position), c->radius, c->color);
   )
 )
 
@@ -681,46 +815,9 @@ QUERY(_draw_text
   , read(alias_LocalToWorld2D, w)
   , read(DrawText, t)
   , action(
-    DrawText(t->text, alias_pga2d_point_x(w->position), alias_pga2d_point_y(w->position), t->size, alias_Color_to_raylib_Color(t->color));
+    replacement_DrawText(t->text, alias_pga2d_point_x(w->position), alias_pga2d_point_y(w->position), t->size, t->color);
   )
 )
-
-// raylib fucking sucks for rendering
-void _render_triangles(uint32_t texture_id, const struct _ui_Vertex * vertexes, uint32_t num_indexes, const uint32_t * indexes) {
-  rlSetTexture(texture_id);
-  rlBegin(RL_QUADS);
-  for(uint32_t i = 0; i < num_indexes; ) {
-    for(uint32_t j = 0; j < 3; j++, i++) {
-      uint32_t index = indexes[i];
-      rlColor4f(
-          vertexes[index].rgba[0]
-        , vertexes[index].rgba[1]
-        , vertexes[index].rgba[2]
-        , vertexes[index].rgba[3]
-        );
-      rlTexCoord2f(
-          vertexes[index].st[0]
-        , vertexes[index].st[1]
-        );
-      rlVertex2f(
-          vertexes[index].xy[0]
-        , vertexes[index].xy[1]
-        );
-      if(j == 0) {
-        // stupid fucking raylib, honestly wtf
-        rlTexCoord2f(
-            vertexes[index].st[0]
-          , vertexes[index].st[1]
-          );
-        rlVertex2f(
-            vertexes[index].xy[0]
-          , vertexes[index].xy[1]
-          );
-      }
-    }
-  }
-  rlEnd();
-}
 
 QUERY(_draw_sprites
   , read(alias_LocalToWorld2D, t)
@@ -749,7 +846,7 @@ QUERY(_draw_sprites
     box[2] = alias_pga2d_sandwich_bm(box[2], t->motor);
     box[3] = alias_pga2d_sandwich_bm(box[3], t->motor);
 
-    struct _ui_Vertex vertexes[] = {
+    struct BackendUIVertex vertexes[] = {
         { .xy = { alias_pga2d_point_x(box[0]), alias_pga2d_point_y(box[0]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s1, s->t1 } }
       , { .xy = { alias_pga2d_point_x(box[1]), alias_pga2d_point_y(box[1]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s1, s->t0 } }
       , { .xy = { alias_pga2d_point_x(box[2]), alias_pga2d_point_y(box[2]) }, .rgba = { s->color.r, s->color.g, s->color.b, s->color.a }, .st = { s->s0, s->t0 } }
@@ -761,7 +858,7 @@ QUERY(_draw_sprites
       , 0, 2, 3
     };
 
-    _render_triangles(res->image.raylib.id, vertexes, 6, indexes);
+    BackendUIVertex_render(&res->image, vertexes, 6, indexes);
   )
 )
 
@@ -769,38 +866,28 @@ QUERY(_update_display
   , read(alias_LocalToWorld2D, transform)
   , read(Camera, camera)
   , pre(
-    BeginDrawing();
-
-    ClearBackground(alias_Color_to_raylib_Color(alias_Color_RAYWHITE));
+    Backend_begin_rendering(_screen_width, _screen_height);
   )
   , action(
-    int x = alias_pga2d_point_x(camera->viewport_min) * _screen_width;
-    int y = alias_pga2d_point_y(camera->viewport_min) * _screen_height;
-    int width = (alias_pga2d_point_x(camera->viewport_max) * _screen_width) - x;
-    int height = (alias_pga2d_point_y(camera->viewport_max) * _screen_height) - y;
+    struct BackendMode2D mode;
 
-    //BeginScissorMode(x, y, width, height);
-
-    // thse numbers make no sense, why have this 'offset' bs
-    BeginMode2D((Camera2D) {
-      .offset = { width / 2.0f, height / 2.0f },                // Camera offset (displacement from target)
-      .target = { alias_pga2d_point_x(transform->position), alias_pga2d_point_y(transform->position) }, // Camera target (rotation and zoom origin)
-      .rotation = 0.0f,                                         // Camera rotation in degrees
-      .zoom = camera->zoom                                      // Camera zoom (scaling), should be 1.0f by default
-    });
+    mode.viewport_min = camera->viewport_min;
+    mode.viewport_max = camera->viewport_max;
+    mode.camera = transform->motor;
+    mode.zoom = camera->zoom;
+    mode.background = alias_Color_from_rgb_u8(245, 245, 245);
+    Backend_begin_2d(mode);
 
     _draw_sprites();
-
     _draw_rectangles();
     _draw_circles();
     _draw_text();
 
-    EndMode2D();
-    //EndScissorMode();
+    Backend_end_2d();
   )
   , post(
     _update_ui();
-    EndDrawing();
+    Backend_end_rendering();
   )
 )
 
@@ -809,14 +896,12 @@ QUERY(_update_display
 
 static inline void _text_size(const char * buffer, float size, float max_width, float * out_width, float * out_height) {
   (void)max_width;
-  Vector2 dim = MeasureTextEx(GetFontDefault(), buffer, size, 0);
-  *out_width = dim.x;
-  *out_height = dim.y;
+  replacement_MeasureTextEx(buffer, size, 0, out_width, out_height);
 }
 
 static inline void _text_draw(const char * buffer, float x, float y, float width, float size, alias_Color color) {
   (void)width;
-  DrawText(buffer, x, y, size, alias_Color_to_raylib_Color(color));
+  replacement_DrawText(buffer, x, y, size, color);
 }
 
 static inline void _start_ui(void) {
@@ -838,7 +923,7 @@ static inline void _start_ui(void) {
 void Engine_ui_image(struct Image * img) {
   _start_ui();
   struct LoadedResource * resource = _load_image(img);
-  alias_ui_image(_ui, resource->image.width, resource->image.height, 0, 0, 1, 1, resource->image.raylib.id);
+  alias_ui_image(_ui, resource->image.width, resource->image.height, 0, 0, 1, 1, resource->id);
 }
 
 void Engine_ui_align_fractions(float x, float y) {
@@ -909,46 +994,9 @@ static void _update_ui(void) {
         continue;
       }
 
-      _render_triangles(_ui_groups[g].texture_id, _ui_vertexes_data, _ui_groups[g].length, _ui_indexes_data + _ui_groups[g].index);
+      struct LoadedResource * material = _loaded_resource_by_id(_ui_groups[g].texture_id);
 
-      /*
-      rlSetTexture(_ui_groups[g].texture_id);
-
-      rlBegin(RL_QUADS); // has to use quads with degenerate vertexes...
-      for(uint32_t i = _ui_groups[g].index, end = i + length; i < end; ) {
-        for(uint32_t j = 0; j < 3; j++) {
-          uint32_t index = _ui_indexes_data[i++];
-          rlColor4f(
-              _ui_vertexes_data[index].rgba[0]
-            , _ui_vertexes_data[index].rgba[1]
-            , _ui_vertexes_data[index].rgba[2]
-            , _ui_vertexes_data[index].rgba[3]
-            );
-          rlTexCoord2f(
-              _ui_vertexes_data[index].st[0]
-            , _ui_vertexes_data[index].st[1]
-            );
-          rlVertex2f(
-              _ui_vertexes_data[index].xy[0]
-            , _ui_vertexes_data[index].xy[1]
-            );
-          if(j == 0) {
-            // stupid fucking raylib, honestly wtf
-            rlTexCoord2f(
-                _ui_vertexes_data[index].st[0]
-              , _ui_vertexes_data[index].st[1]
-              );
-            rlVertex2f(
-                _ui_vertexes_data[index].xy[0]
-              , _ui_vertexes_data[index].xy[1]
-              );
-          }
-        }
-      }
-      rlEnd();
-      */
+      BackendUIVertex_render(&material->image, _ui_vertexes_data, _ui_groups[g].length, _ui_indexes_data + _ui_groups[g].index);
     }
-
-    rlSetTexture(0);
   }
 }
