@@ -512,14 +512,14 @@ struct FontGlyph {
   float advance;
 
   float plane_left;
-  float plane_bottom;
-  float plane_right;
   float plane_top;
+  float plane_right;
+  float plane_bottom;
 
   float atlas_left;
-  float atlas_bottom;
-  float atlas_right;
   float atlas_top;
+  float atlas_right;
+  float atlas_bottom;
 };
 
 struct Font {
@@ -563,17 +563,17 @@ void Font_draw(struct Font * font, const char * text, float x, float y, float si
 
     #define EMIT(I, V, H) \
     vertexes[i * 4 + I].xy[0] = x + glyph->plane_##H * size; \
-    vertexes[i * 4 + I].xy[1] = y - glyph->plane_##V * size; \
+    vertexes[i * 4 + I].xy[1] = y + (1.0f - glyph->plane_##V) * size; \
     vertexes[i * 4 + I].rgba[0] = color.r; \
     vertexes[i * 4 + I].rgba[1] = color.g; \
     vertexes[i * 4 + I].rgba[2] = color.b; \
     vertexes[i * 4 + I].rgba[3] = color.a; \
     vertexes[i * 4 + I].st[0] = glyph->atlas_##H * s_scale; \
     vertexes[i * 4 + I].st[1] = 1.0f - (glyph->atlas_##V * t_scale);
-    EMIT(0, top, left)
-    EMIT(1, top, right)
-    EMIT(2, bottom, right)
-    EMIT(3, bottom, left)
+    EMIT(0, bottom, left)
+    EMIT(1, bottom, right)
+    EMIT(2, top, right)
+    EMIT(3, top, left)
     #undef EMIT
 
     indexes[i * 6 + 0] = i * 4 + 0;
