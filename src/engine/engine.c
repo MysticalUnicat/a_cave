@@ -668,7 +668,7 @@ void replacement_DrawCircle(float x, float y, float radius, alias_Color color) {
   uint32_t indexes[3 * (NUM_CIRCLE_SEGMENTS - 2)];
 
   for(uint32_t i = 0; i < NUM_CIRCLE_SEGMENTS; i++) {
-    alias_R angle = (alias_R)i / NUM_CIRCLE_SEGMENTS;
+    alias_R angle = (alias_R)i / NUM_CIRCLE_SEGMENTS * alias_R_PI * 2;
     alias_R s = alias_R_sin(angle);
     alias_R c = alias_R_cos(angle);
     vertexes[i].xy[0] = x + s * radius;
@@ -681,7 +681,7 @@ void replacement_DrawCircle(float x, float y, float radius, alias_Color color) {
     vertexes[i].st[1] = 0;
 
     if(i >= 2) {
-      indexes[(i - 2) * 3 + 0] = i - 2;
+      indexes[(i - 2) * 3 + 0] = 0;
       indexes[(i - 2) * 3 + 1] = i - 1;
       indexes[(i - 2) * 3 + 2] = i - 0;
     }

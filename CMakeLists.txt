@@ -13,8 +13,19 @@ if(${BACKEND} STREQUAL "RAYLIB")
   set(BACKEND_LIBRARIES raylib)
   set(BACKEND_SOURCE src/engine/backend_raylib.c)
 elseif(${BACKEND} STREQUAL "GLFW")
+  set(BUILD_SHARED_LIBS   OFF      CACHE BOOL   "" FORCE)
+  set(GLFW_BUILD_EXAMPLES OFF      CACHE BOOL   "" FORCE)
+  set(GLFW_BUILD_TESTS    OFF      CACHE BOOL   "" FORCE)
+  set(GLFW_BUILD_DOCS     OFF      CACHE BOOL   "" FORCE)
+  set(GLFW_INSTALL        OFF      CACHE BOOL   "" FORCE)
+  set(GLFW_LIBRARY_TYPE   "STATIC" CACHE STRING "" FORCE)
+
   add_subdirectory(ext/glfw)
-  set(BACKEND_LIBRARIES glfw)
+
+  add_library(glad ext/glad/src/gl.c ext/glad/src/vulkan.c)
+  target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext/glad/include)
+
+  set(BACKEND_LIBRARIES glfw glad)
   set(BACKEND_SOURCE src/engine/backend_glfw.c)
 else()
   message(FATAL_ERROR "set BACKEND to be either RAYLIB or GLFW")
@@ -41,6 +52,8 @@ add_executable(alias_town
   src/state/intro.c
   src/state/paused.c
   src/state/playing.c
+  src/state/main_menu.c
+  src/state/ui_demo.c
 
   src/system/movement.c
   src/system/player_movement.c
