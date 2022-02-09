@@ -4,7 +4,7 @@ extern struct State main_menu_state;
 
 static int _intro_l = 0;
 
-char * _unicat_names[] = {
+static char * _unicat_names[] = {
   "Sarah",
   "Charlie",
   "Frank",
@@ -13,9 +13,9 @@ char * _unicat_names[] = {
   "Melonie"
 };
 
-struct Image _intro_title_image = { .path = "intro_title.png" };
+static struct Image _intro_title_image = { .path = "intro_title.png" };
 
-void _intro_frame(void * ud) {
+static void _intro_frame(void * ud) {
   (void)ud;
 
   if(main_inputs.menu_back.boolean) {

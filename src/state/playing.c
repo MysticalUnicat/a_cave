@@ -1,20 +1,26 @@
 #include <stdlib.h>
 #include <alias/ecs.h>
+#include <alias/random.h>
 
 #include "local.h"
 
 // system
 extern void player_movement_system(void);
 extern void movement_system(void);
+extern void armor_system(void);
+extern void shield_system(void);
+extern void power_system(void);
 
 // prefab
 extern alias_ecs_EntityHandle _spawn_grass(alias_ecs_LayerHandle layer, alias_pga2d_Point origin);
-extern alias_ecs_EntityHandle _spawn_player(alias_ecs_LayerHandle layer, alias_pga2d_Point origin);
+extern alias_ecs_EntityHandle _spawn_target(alias_ecs_LayerHandle layer);
+extern alias_ecs_EntityHandle _spawn_player(alias_ecs_LayerHandle layer, alias_pga2d_Point origin, alias_ecs_EntityHandle target);
 extern alias_ecs_EntityHandle _spawn_camera(alias_ecs_LayerHandle layer, alias_ecs_EntityHandle target);
 
 extern struct State paused_state;
 
 struct {
+  Entity target;
   Entity camera;
   Entity player;
   alias_pga2d_Direction player_target;
@@ -23,18 +29,17 @@ struct {
   alias_ecs_LayerHandle level_layer;
 } _playing;
 
-alias_R alias_random_R(void) {
-  return (alias_R)(rand()) / (alias_R)RAND_MAX;
-}
-
-static void _shoot_bullet(alias_ecs_EntityHandle entity, void * * write_data, void * * read_data) {
-}
+// plan:
+// - call functions at a certain time
+//   - setting up the enemy types that can spawn
+//   - (de)spawn certain enemys in a pattern
+// - 
 
 void _load_level(void) {
   // make some grass
-  for(uint32_t i = 0; i < 100; i++) {
-    alias_R x = alias_random_R() * 1000 - 500;
-    alias_R y = alias_random_R() * 1000 - 500;
+  for(uint32_t i = 0; i < 10000; i++) {
+    alias_R x = alias_random_f32_snorm() * 10000;
+    alias_R y = alias_random_f32_snorm() * 10000;
 
     _spawn_grass(_playing.level_layer, alias_pga2d_point(x, y));
   }
@@ -43,12 +48,16 @@ void _load_level(void) {
 void _playing_begin(void * ud) {
   (void)ud;
 
+  Engine_physics_2d_bundle()->gravity = (alias_pga2d_Direction) { .e02 = 9.81 };
+
   alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
     .max_entities = 0
   }, &_playing.player_layer);
 
-  _playing.player = _spawn_player(_playing.player_layer, alias_pga2d_point(0, 0));
+  _playing.target = _spawn_target(_playing.player_layer);
+  _playing.player = _spawn_player(_playing.player_layer, alias_pga2d_point(0, 0), _playing.target);
   _playing.camera = _spawn_camera(_playing.player_layer, _playing.player);
+  PlayerControlMovement_write(_playing.player)->inputs->mouse_position.click_camera = _playing.camera;
 
   alias_ecs_create_layer(Engine_ecs(), &(alias_ecs_LayerCreateInfo) {
     .max_entities = 0
@@ -61,6 +70,30 @@ void _playing_frame(void * ud) {
   (void)ud;
   player_movement_system();
   movement_system();
+  armor_system();
+  shield_system();
+  power_system();
+
+  Engine_ui_bottom_left();
+  Engine_ui_vertical(); {
+    Engine_ui_font_size(18);
+    Engine_ui_font_color(alias_Color_BLACK);
+    
+    const struct Armor * armor = Armor_read(_playing.player);
+    if(armor != NULL) {
+      Engine_ui_text("ARMOR: %'.2f / %'.2f", armor->live.current, GameValue_get(&armor->max));
+    }
+
+    const struct Shield * shield = Shield_read(_playing.player);
+    if(shield != NULL) {
+      Engine_ui_text("SHIELD: %'.2f / %'.2f", shield->live.current, GameValue_get(&shield->max));
+    }
+
+    const struct Power * power = Power_read(_playing.player);
+    if(power != NULL) {
+      Engine_ui_text("POWER: %'.2f / %'.2f", power->live.current, GameValue_get(&power->max));
+    }
+  } Engine_ui_end();
 }
 
 void _playing_end(void * ud) {

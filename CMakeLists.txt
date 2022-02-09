@@ -42,12 +42,12 @@ target_link_libraries(a_engine alias ${BACKEND_LIBRARIES} uv_a)
 add_executable(alias_town
   src/main.c
 
-  src/component/movement.c
-  src/component/player_control_movement.c
+	src/component.c
 
   src/prefab/camera.c
   src/prefab/grass.c
   src/prefab/player.c
+  src/prefab/target.c
 
   src/state/intro.c
   src/state/paused.c
@@ -55,7 +55,10 @@ add_executable(alias_town
   src/state/main_menu.c
   src/state/ui_demo.c
 
+	src/system/armor.c
   src/system/movement.c
   src/system/player_movement.c
+	src/system/power.c
+	src/system/shield.c
 )
 target_link_libraries(alias_town a_engine)

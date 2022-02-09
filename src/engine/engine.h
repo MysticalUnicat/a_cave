@@ -42,6 +42,7 @@ alias_ecs_Instance * Engine_ecs(void);
 alias_R Engine_physics_speed(void);
 void Engine_set_physics_speed(alias_R speed);
 
+alias_R Engine_frame_time(void);
 alias_R Engine_time(void);
 
 // input
@@ -166,16 +167,24 @@ struct InputBackendPair {
 };
 
 enum InputSignalType {
-  InputSignal_Pass,
-  InputSignal_Up,
-  InputSignal_Down,
-  InputSignal_Direction,
-  InputSignal_Point,
+    InputSignal_Pass
+  , InputSignal_Up
+  , InputSignal_Down
+  , InputSignal_Direction
+  , InputSignal_Point
+  , InputSignal_ViewportPoint
 };
 
 struct InputSignal {
   enum InputSignalType type;
+
+  // inputs
   uint32_t bindings[2];
+  union {
+    Entity click_camera;
+  };
+
+  // output
   union {
     bool boolean;
     alias_pga2d_Direction direction;
@@ -192,6 +201,7 @@ struct InputSignal {
 #define INPUT_SIGNAL_DOWN(BINDING) (struct InputSignal) { .type = InputSignal_Down, .bindings[0] = BINDING }
 #define INPUT_SIGNAL_DIRECTION(BINDING_X, BINDING_Y) (struct InputSignal) { .type = InputSignal_Direction, .bindings[0] = BINDING_X, .bindings[1] = BINDING_Y }
 #define INPUT_SIGNAL_POINT(BINDING_X, BINDING_Y) (struct InputSignal) { .type = InputSignal_Point, .bindings[0] = BINDING_X, .bindings[1] = BINDING_Y }
+#define INPUT_SIGNAL_VIEWPORT_POINT(BINDING_X, BINDING_Y, CAMERA) (struct InputSignal) { .type = InputSignal_ViewportPoint, .bindings[0] = BINDING_X, .bindings[1] = BINDING_Y, .click_camera = CAMERA }
 
 void Engine_set_player_input_backend(uint32_t player_index, uint32_t pair_count, const struct InputBackendPair * pairs);
 
@@ -252,6 +262,7 @@ ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DMotion)
 ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DBodyMotion)
 ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DMass)
 ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DDampen)
+ENGINE_COMPONENT(Engine_physics_2d_bundle, Physics2DGravity)
 
 // render
 struct LoadedResource;

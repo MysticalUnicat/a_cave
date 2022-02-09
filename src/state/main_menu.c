@@ -8,6 +8,7 @@ static const char * _buttons[] = {
   , "UI Demo"
   , "Quit"
 };
+#define NUM_BUTTONS (sizeof(_buttons)/sizeof(_buttons[0]))
 
 static uint32_t _current_button = 0;
 
@@ -35,7 +36,13 @@ void _main_menu_frame(void * ud) {
     return;
   }
 
-  if(main_inputs.menu_down
+  if(main_inputs.menu_up.boolean) {
+    _current_button = (_current_button ? _current_button : NUM_BUTTONS) - 1;
+  }
+
+  if(main_inputs.menu_down.boolean) {
+    _current_button = (_current_button + 1) % NUM_BUTTONS;
+  }
 
   Engine_ui_center();
     Engine_ui_font_color(alias_Color_GRAY);
@@ -51,6 +58,6 @@ void _main_menu_frame(void * ud) {
   Engine_ui_text("version 1");
 }
 
-struct State intro_state = {
-  .frame = _intro_frame
+struct State main_menu_state = {
+  .frame = _main_menu_frame
 };

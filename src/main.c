@@ -22,7 +22,11 @@ struct InputBackendPair main_input_backend[] = {
 };
 
 struct MainInputs main_inputs = {
-    .menu_back = INPUT_SIGNAL_UP(Binding_Back)
+    .menu_up = INPUT_SIGNAL_UP(Binding_PlayerUp)
+  , .menu_down = INPUT_SIGNAL_UP(Binding_PlayerDown)
+  , .menu_left = INPUT_SIGNAL_UP(Binding_PlayerLeft)
+  , .menu_right = INPUT_SIGNAL_UP(Binding_PlayerRight)
+  , .menu_back = INPUT_SIGNAL_UP(Binding_Back)
   , .menu_forward = INPUT_SIGNAL_UP(Binding_Forward)
   , .mouse_position = INPUT_SIGNAL_POINT(Binding_MouseX, Binding_MouseY)
   , .mouse_left_click = INPUT_SIGNAL_DOWN(Binding_LeftClick)
@@ -35,7 +39,7 @@ int main(void) {
 
   Engine_set_player_input_backend(0, sizeof(main_input_backend) / sizeof(main_input_backend[0]), main_input_backend);
 
-  Engine_add_input_frontend(0, 4, &main_inputs.menu_back);
+  Engine_add_input_frontend(0, 8, &main_inputs.menu_up);
 
   while(Engine_update()) {
   }

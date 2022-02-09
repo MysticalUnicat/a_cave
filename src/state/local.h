@@ -18,6 +18,10 @@ enum Binding {
 };
 
 struct MainInputs {
+  struct InputSignal menu_up;
+  struct InputSignal menu_down;
+  struct InputSignal menu_left;
+  struct InputSignal menu_right;
   struct InputSignal menu_back;
   struct InputSignal menu_forward;
   struct InputSignal mouse_position;

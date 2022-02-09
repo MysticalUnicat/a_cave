@@ -5,11 +5,12 @@ QUERY( movement_system
   , write(alias_Physics2DBodyMotion, body)
   , read(alias_LocalToWorld2D, local_to_world)
   , action(
+    // Xw = ~M Xb M
     alias_pga2d_Motor M = local_to_world->motor;
-    alias_pga2d_Point P = local_to_world->position;
-    alias_pga2d_Point T;
-    alias_pga2d_Direction D;
-    alias_R S = move->movement_speed;
+    
+    alias_pga2d_Direction Dw = move->target_direction;
+    
+    alias_pga2d_AntiBivector Fb = { .e0 = 0, .e1 = 0, .e2 = 0 };
 
     if(move->target == MovementTarget_None) {
       return;
@@ -17,41 +18,44 @@ QUERY( movement_system
 
     if(move->target == MovementTarget_LocalDirection) {
       move->done = true;
-      D = move->target_direction;
+      Fb = alias_pga2d_dual_b(Dw);
     } else if(move->target == MovementTarget_WorldDirection) {
       move->done = true;
-      D = move->target_direction;
+      Fb = alias_pga2d_dual(alias_pga2d_grade_2(alias_pga2d_sandwich(alias_pga2d_b(Dw), alias_pga2d_reverse_m(M))));
     } else {
       if(move->done) {
         return;
       }
-
+      alias_pga2d_Point Tw;
       if(move->target == MovementTarget_Point) {
-        T = move->target_point;
+        Tw = move->target_point;
       } else {
         const alias_LocalToWorld2D * tgt = alias_LocalToWorld2D_read(move->target_entity);
         if(tgt == NULL) {
           move->done = true;
         } else {
-          T = tgt->position;
+          Tw = tgt->position;
         }
       }
-
-      D = alias_pga2d_sub_bb(T, P);
+      
+      Fb = alias_pga2d_mul(
+          alias_pga2d_s(-1.0f)
+        , alias_pga2d_regressive_product(
+            alias_pga2d_sandwich(alias_pga2d_b(Tw), alias_pga2d_reverse_m(M))
+          , alias_pga2d_b(alias_pga2d_point(0, 0))
+          )
+        );
     }
 
-    alias_R D_norm = alias_pga2d_inorm(alias_pga2d_b(D));
-    if(D_norm <= alias_R_EPSILON) {
+    // cap Fb's magnitude
+    alias_R Fn = alias_pga2d_norm(alias_pga2d_v(Fb));
+    if(Fn >= alias_R_ONE) {
+      Fb = alias_pga2d_mul_sv(1.0f / Fn, Fb);
+    } else if(Fn <= 0.75f) {
       move->done = true;
-      return;
     }
-    D = alias_pga2d_mul_bs(D, alias_R_ONE / D_norm);
-   
-    alias_pga2d_Vector F = alias_pga2d_dual(alias_pga2d_mul_bs(D, S));
 
-    printf("P(%2ge01 %2ge02 %2ge12(a), D %2ge01(y) %2ge02(-x) %2ge12(a), D_norm %2g\n", P.e01, P.e02, P.e12, D.e01, D.e02, D.e12, D_norm);
-    
-    body->forque = alias_pga2d_add_vv(body->forque, F);
+    body->forque = alias_pga2d_add_vv(body->forque, alias_pga2d_mul_sv(move->movement_speed, Fb));
   )
 )
 

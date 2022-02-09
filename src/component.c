@@ -1,7 +1,7 @@
-#include "../component.h"
-#include "../state/local.h"
+#include "component.h"
+#include "state/local.h"
 
-static void _init(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
+static void _player_control_movement_init(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
   struct PlayerControlMovement * player_control = (struct PlayerControlMovement *)data[0];
 
   struct PlayerInputs * inputs = alias_malloc(alias_default_MemoryCB(), sizeof(*inputs), alignof(*inputs));
@@ -21,7 +21,7 @@ static void _init(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHand
   player_control->input_index = Engine_add_input_frontend(player_control->player_index, 10, &inputs->pause);
 }
 
-static void _cleanup(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
+static void _player_control_movement_cleanup(void * ud, alias_ecs_Instance * instance, alias_ecs_EntityHandle entity, void ** data) {
   struct PlayerControlMovement * player_control = *(struct PlayerControlMovement **)data[0];
 
   Engine_remove_input_frontend(player_control->player_index, player_control->input_index);
@@ -33,7 +33,19 @@ COMPONENT(
     PlayerControlMovement
   , .num_required_components = 1
   , .required_components = (alias_ecs_ComponentHandle[]) { Movement_component() }
-  , .init = { _init, NULL }
-  , .cleanup = { _cleanup, NULL }
+  , .init = { _player_control_movement_init, NULL }
+  , .cleanup = { _player_control_movement_cleanup, NULL }
   )
+
+DEFINE_COMPONENT(
+    Movement
+  , .num_required_components = 1
+  , .required_components = (alias_ecs_ComponentHandle[]) { alias_Physics2DBodyMotion_component() }
+  )
+
+DEFINE_COMPONENT(Shield)
+
+DEFINE_COMPONENT(Armor)
+
+DEFINE_COMPONENT(Power)
 

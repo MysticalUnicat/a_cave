@@ -310,6 +310,40 @@ static void _update_input(void) {
           signal->point = alias_pga2d_point(_input_bindings[signal->bindings[0]], _input_bindings[signal->bindings[1]]);
           break;
         }
+      case InputSignal_ViewportPoint:
+        {
+          alias_R px = _input_bindings[signal->bindings[0]];
+          alias_R py = _input_bindings[signal->bindings[1]];
+
+          const struct Camera * camera = Camera_read(signal->click_camera);
+          const struct alias_LocalToWorld2D * transform = alias_LocalToWorld2D_read(signal->click_camera);
+
+          alias_R minx = alias_pga2d_point_x(camera->viewport_min) * _screen_width;
+          alias_R miny = alias_pga2d_point_y(camera->viewport_min) * _screen_height;
+          alias_R maxx = alias_pga2d_point_x(camera->viewport_max) * _screen_width;
+          alias_R maxy = alias_pga2d_point_y(camera->viewport_max) * _screen_height;
+          alias_R width = maxx - minx;
+          alias_R height = maxy - miny;
+
+          px -= minx;
+          py -= miny;
+          if(px < 0 || py < 0 || px > width || py > height) {
+            break;
+          }
+
+          px -= width / 2;
+          py -= height / 2;
+          
+          alias_R cx = alias_pga2d_point_x(transform->position);
+          alias_R cy = alias_pga2d_point_y(transform->position);
+
+          px += cx;
+          py += cy;
+
+          signal->point = alias_pga2d_point(px, py);
+          
+          break;
+        }
       }
     }
   }
@@ -375,6 +409,10 @@ alias_R Engine_physics_speed(void) {
 
 void Engine_set_physics_speed(alias_R speed) {
   _physics_speed = speed;
+}
+
+alias_R Engine_frame_time(void) {
+  return Backend_get_frame_time();
 }
 
 alias_R Engine_time(void) {
@@ -688,6 +726,8 @@ void replacement_DrawCircle(float x, float y, float radius, alias_Color color) {
   }
 
   BackendUIVertex_render(NULL, vertexes, 3 * (NUM_CIRCLE_SEGMENTS - 2), indexes);
+
+#undef NUM_CIRCLE_SEGMENTS
 }
 
 static struct FontGlyph BreeSerif_glyphs[] = {

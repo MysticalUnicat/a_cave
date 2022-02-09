@@ -4,7 +4,7 @@ extern struct State main_menu_state;
 
 static int _intro_l = 0;
 
-char * _unicat_names[] = {
+static char * _unicat_names[] = {
   "Sarah",
   "Charlie",
   "Frank",
@@ -13,9 +13,9 @@ char * _unicat_names[] = {
   "Melonie"
 };
 
-struct Image _intro_title_image = { .path = "intro_title.png" };
+static struct Image _intro_title_image = { .path = "intro_title.png" };
 
-void _intro_frame(void * ud) {
+static void _ui_demo_frame(void * ud) {
   (void)ud;
 
   if(main_inputs.menu_back.boolean) {
@@ -48,6 +48,6 @@ void _intro_frame(void * ud) {
   Engine_ui_text("version 1");
 }
 
-struct State intro_state = {
-  .frame = _intro_frame
+struct State ui_demo_state = {
+  .frame = _ui_demo_frame
 };
