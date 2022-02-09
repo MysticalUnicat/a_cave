@@ -29,7 +29,7 @@ struct State {
 
 void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * title, struct State * first_state);
 
-bool Engine_update(void);
+void Engine_run(void);
 
 // state
 void Engine_push_state(struct State * state);

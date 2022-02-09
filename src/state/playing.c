@@ -37,9 +37,9 @@ struct {
 
 void _load_level(void) {
   // make some grass
-  for(uint32_t i = 0; i < 10000; i++) {
-    alias_R x = alias_random_f32_snorm() * 10000;
-    alias_R y = alias_random_f32_snorm() * 10000;
+  for(uint32_t i = 0; i < 1000; i++) {
+    alias_R x = alias_random_f32_snorm() * 100;
+    alias_R y = alias_random_f32_snorm() * 100;
 
     _spawn_grass(_playing.level_layer, alias_pga2d_point(x, y));
   }

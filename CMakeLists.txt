@@ -5,7 +5,9 @@ project(a_cave LANGUAGES C)
 
 set(BACKEND RAYLIB CACHE STRING "backend to use")
 
+set(ALIAS_PROFILING ON)
 add_subdirectory(ext/alias)
+
 add_subdirectory(ext/libuv)
 
 if(${BACKEND} STREQUAL "RAYLIB")

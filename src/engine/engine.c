@@ -12,15 +12,12 @@
 #define UI_NUM_INDEXES  (1024 * 1024)
 #define UI_NUM_GROUPS   1024
 
-#define USE_UV 0
+#define USE_UV 1
 
 #if USE_UV
 #include <uv.h>
 
 static uv_loop_t _loop;
-static uv_run_mode _loop_mode;
-static uv_timer_t _frame_timer;
-static bool _running;
 
 static inline void _frame_timer_f(uv_timer_t * t);
 #endif
@@ -74,17 +71,6 @@ void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * tit
 
   Backend_init_window(screen_width, screen_height, title);
 
-#if USE_UV
-  uv_loop_init(&_loop);
-  _loop_mode = UV_RUN_NOWAIT;
-  _running = true;
-
-  uv_timer_init(&_loop, &_frame_timer);
-  uv_timer_start(&_frame_timer, _frame_timer_f, 0, 16);
-#else
-  Backend_set_target_fps(60);
-#endif
-
   alias_ecs_create_instance(NULL, &_ecs);
 
   alias_ui_initialize(alias_default_MemoryCB(), &_ui);
@@ -114,28 +100,25 @@ static bool _update(void) {
 }
 
 #if USE_UV
-bool Engine_update(void) {
-  if(uv_run(&_loop, _loop_mode) == 0) {
-    _running = false;
-  }
-  return _running;
+void Engine_run(void) {
+  uv_timer_t _frame_timer;
+
+  uv_loop_init(&_loop);
+
+  uv_timer_init(&_loop, &_frame_timer);
+  uv_timer_start(&_frame_timer, _frame_timer_f, 0, 16);
+  
+  uv_run(&_loop, UV_RUN_DEFAULT);
 }
 static inline void _frame_timer_f(uv_timer_t * t) {
   if(!_update()) {
-    _running = false;
-  }
-
-  if(_running) {
-    uv_timer_again(t);
-    _loop_mode = UV_RUN_ONCE;
-  } else {
-    uv_timer_stop(&_frame_timer);
-    _loop_mode = UV_RUN_NOWAIT;
+    uv_stop(&_loop);
   }
 }
 #else
-bool Engine_update(void) {
-  return _update();
+void Engine_run(void) {
+  Backend_set_target_fps(60);
+  while(_update()) ;
 }
 #endif
 

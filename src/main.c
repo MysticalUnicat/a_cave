@@ -41,6 +41,5 @@ int main(void) {
 
   Engine_add_input_frontend(0, 8, &main_inputs.menu_up);
 
-  while(Engine_update()) {
-  }
+  Engine_run();
 }
