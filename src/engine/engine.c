@@ -12,15 +12,9 @@
 #define UI_NUM_INDEXES  (1024 * 1024)
 #define UI_NUM_GROUPS   1024
 
-#define USE_UV 1
-
-#if USE_UV
-#include <uv.h>
-
 static uv_loop_t _loop;
 
 static inline void _frame_timer_f(uv_timer_t * t);
-#endif
 
 static alias_ecs_Instance * _ecs;
 
@@ -99,7 +93,10 @@ static bool _update(void) {
   return _update_state();
 }
 
-#if USE_UV
+uv_loop_t * Engine_uv_loop(void) {
+  return &_loop;
+}
+
 void Engine_run(void) {
   uv_timer_t _frame_timer;
 
@@ -110,17 +107,12 @@ void Engine_run(void) {
   
   uv_run(&_loop, UV_RUN_DEFAULT);
 }
+
 static inline void _frame_timer_f(uv_timer_t * t) {
   if(!_update()) {
     uv_stop(&_loop);
   }
 }
-#else
-void Engine_run(void) {
-  Backend_set_target_fps(60);
-  while(_update()) ;
-}
-#endif
 
 // state
 void Engine_push_state(struct State * state) {

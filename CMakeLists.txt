@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.1)
 
 project(a_cave LANGUAGES C)
 
-set(BACKEND RAYLIB CACHE STRING "backend to use")
+set(BACKEND GLFW CACHE STRING "backend to use")
 
-set(ALIAS_PROFILING ON)
+set(ALIAS_PROFILING ON CACHE BOOL "" FORCE)
 add_subdirectory(ext/alias)
 
 add_subdirectory(ext/libuv)
@@ -21,14 +21,10 @@ elseif(${BACKEND} STREQUAL "GLFW")
   set(GLFW_BUILD_DOCS     OFF      CACHE BOOL   "" FORCE)
   set(GLFW_INSTALL        OFF      CACHE BOOL   "" FORCE)
   set(GLFW_LIBRARY_TYPE   "STATIC" CACHE STRING "" FORCE)
-
   add_subdirectory(ext/glfw)
 
-  add_library(glad ext/glad/src/gl.c ext/glad/src/vulkan.c)
-  target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/ext/glad/include)
-
-  set(BACKEND_LIBRARIES glfw glad)
-  set(BACKEND_SOURCE src/engine/backend_glfw.c)
+  set(BACKEND_LIBRARIES glfw vulkan)
+  set(BACKEND_SOURCE src/engine/backend_glfw.c src/engine/backend_vk.c)
 else()
   message(FATAL_ERROR "set BACKEND to be either RAYLIB or GLFW")
 endif()
@@ -36,10 +32,12 @@ endif()
 add_library(a_engine
   src/engine/cbuf.c
   src/engine/engine.c
+  src/engine/image.c
 
   ${BACKEND_SOURCE}
 )
 target_link_libraries(a_engine alias ${BACKEND_LIBRARIES} uv_a)
+target_include_directories(a_engine PRIVATE ext/stb)
 
 add_executable(alias_town
   src/main.c

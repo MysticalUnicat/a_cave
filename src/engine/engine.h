@@ -9,6 +9,8 @@
 #include <alias/math.h>
 #include <alias/color.h>
 
+#include <uv.h>
+
 #include "util.h"
 
 // parameters
@@ -30,6 +32,8 @@ struct State {
 void Engine_init(uint32_t screen_width, uint32_t screen_height, const char * title, struct State * first_state);
 
 void Engine_run(void);
+
+uv_loop_t * Engine_uv_loop(void);
 
 // state
 void Engine_push_state(struct State * state);

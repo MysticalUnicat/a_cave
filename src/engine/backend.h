@@ -2,6 +2,11 @@
 
 #include "engine.h"
 
+#if RAYLIB
+#else
+#include <stdatomic.h>
+#endif
+
 void Backend_init_window(uint32_t width, uint32_t height, const char * title);
 void Backend_set_target_fps(uint32_t fps);
 bool Backend_should_exit(void);
@@ -21,7 +26,13 @@ struct BackendImage {
   uint32_t levels;
   uint32_t layers;
 
+#if RAYLIB
   uint32_t id;
+#else
+  uint64_t image;
+  uint64_t memory;
+  atomic_uint_fast64_t imageview;
+#endif
 
   uint32_t internal_format;
 };
