@@ -7,8 +7,11 @@
 
 #include <uchar.h>
 
+#undef near
+
 #define Image raylib_Image
 #define Color raylib_Color
+#define Rectangle raylib_Rectangle
 #include <raylib.h>
 #include <rlgl.h>
 #undef Image

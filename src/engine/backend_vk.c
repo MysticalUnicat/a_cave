@@ -93,6 +93,8 @@ static struct {
 
   alias_Vector(struct AllocationBlock) allocation_blocks;
 
+  uint32_t swapchain_current_index;
+
   // begin recreation on resize
   VkSwapchainKHR            swapchain;
   VkExtent2D                swapchain_extents;
@@ -175,7 +177,8 @@ static bool create_debug_report_callback(void) {
   if(!_.validation) {
     return true;
   }
-  return VK_SUCCESS == vkCreateDebugUtilsMessengerEXT(
+  PFN_vkCreateDebugUtilsMessengerEXT createDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_.instance, "vkCreateDebugUtilsMessengerEXT");
+  return VK_SUCCESS == createDebugUtilsMessengerEXT(
       _.instance
     , &(VkDebugUtilsMessengerCreateInfoEXT) {
         .sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT
@@ -539,15 +542,24 @@ static bool create_staging_buffer(void) {
       , .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
       }
     , NULL
-    , &_.create_buffer
+    , &_.staging_buffer
     );
 
+  VkMemoryRequirements memory_requirements;
   vkGetBufferMemoryRequirements(_.device, _.staging_buffer, &memory_requirements);
 
   create_device_memory(memory_requirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &_.staging_buffer_memory);
   vkMapMemory(_.device, _.staging_buffer_memory, 0, _.staging_buffer_size, 0, &_.staging_buffer_map);
 
   vkBindBufferMemory(_.device, _.staging_buffer, _.staging_buffer_memory, 0);
+}
+
+/// flush a single staging buffer, hopefully 
+static void flush_staging_buffer(void) {
+  
+}
+
+static VkSemaphore flush_transfers(void) {
 }
 
 // ====================================================================================================================
@@ -808,7 +820,7 @@ void Vulkan_cleanup(void) {
 
 static uint32_t acquire_command_buffer(uint32_t queue) {
   for(uint32_t i = 0; i < _.command_buffers[queue].length; i++) {
-    vkResult result = vkGetFenceStatus(_.device, _.command_buffers[queue].data[i]);
+    VkResult result = vkGetFenceStatus(_.device, _.command_buffers[queue].data[i].fence);
     if(result == VK_SUCCESS) {
       vkResetFences(_.device, 1, &_.command_buffers[queue].data[i].fence);
       return i;
@@ -827,7 +839,7 @@ static uint32_t acquire_command_buffer(uint32_t queue) {
       , .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY
       , .commandBufferCount = 1
       }
-    , &cbuf->cbuf
+    , &cbuf->buffer
     );
 
   vkCreateFence(
@@ -852,6 +864,7 @@ struct ImageLoadContext {
 };
 
 static void _image_close(uv_fs_t * req) {
+  struct ImageLoadContext * ctx = (struct ImageLoadContext *)req->data;
   uv_fs_req_cleanup(req);
   alias_free(alias_default_MemoryCB(), ctx, sizeof(*ctx), alignof(*ctx));
 }
@@ -875,7 +888,7 @@ static void _image_read(uv_fs_t * req) {
   uv_fs_close(Engine_uv_loop(), &ctx->req, ctx->fd, _image_close);
 
   // Vulkan loading here
-  VKDeviceSize size = width * height * 4;
+  VkDeviceSize size = width * height * 4;
   while(_.staging_buffer_used + size > _.staging_buffer_size) {
     flush_staging_buffer();
   }
@@ -883,7 +896,7 @@ static void _image_read(uv_fs_t * req) {
   void * dst = _.staging_buffer_map + _.staging_buffer_used;
   _.staging_buffer_used += size;
 
-  memcpy(dst, pixels, size);
+  alias_memory_copy(dst, size, pixels, size);
 
   stbi_image_free(pixels);
 
@@ -899,26 +912,26 @@ static void _image_read(uv_fs_t * req) {
       , .arrayLayers   = 1
       , .samples       = VK_SAMPLE_COUNT_1_BIT
       , .tiling        = VK_IMAGE_TILING_OPTIMAL
-      , .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC | VK_IMAGE_USAGE_SAMPLED_BIT;
+      , .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
       , .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
       }
     , NULL
-    , &image->image
+    , (VkImage *)&image->image
     );
 
   VkMemoryRequirements memory_requirements;
-  vkGetImageMemoryRequirements(_.device, image->image, &memory_requirements);
+  vkGetImageMemoryRequirements(_.device, (VkImage)image->image, &memory_requirements);
 
-  create_device_memory(memory_requirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image->memory);
+  create_device_memory(memory_requirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, (VkDeviceMemory *)&image->memory);
 
-  vkBindImageMemory(_.device, image->image, image->memory, 0);
+  vkBindImageMemory(_.device, (VkImage)image->image, (VkDeviceMemory)image->memory, 0);
 
   VkImageView imageview;
   vkCreateImageView(
       _.device
     , &(VkImageViewCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO
-      , .image = image->image
+      , .image = (VkImage)image->image
       , .viewType = VK_IMAGE_VIEW_TYPE_2D
       , .format = VK_FORMAT_R8G8B8A8_UNORM
       , .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }
@@ -931,10 +944,10 @@ static void _image_read(uv_fs_t * req) {
         }
       }
     , NULL
-    , &view
+    , &imageview
     );
 
-  atomic_store(&image->imageview, imageview);
+  image->imageview = (uint64_t)imageview;
 }
 
 static void _image_fstat(uv_fs_t * req) {
@@ -978,13 +991,13 @@ void BackendImage_load(struct BackendImage * image, const char * filename) {
 }
 
 void BackendImage_unload(struct BackendImage * image) {
-  vkDestroyImageView(_.device, image->imageview, NULL);
-  vkDestroyImage(_.device, image->image, NULL);
-  vkFreeMemory(_.device, image->memory, NULL);
+  vkDestroyImageView(_.device, (VkImageView)image->imageview, NULL);
+  vkDestroyImage(_.device, (VkImage)image->image, NULL);
+  vkFreeMemory(_.device, (VkDeviceMemory)image->memory, NULL);
 }
 
 void BackendUIVertex_render(const struct BackendImage * image, struct BackendUIVertex * vertexes, uint32_t num_indexes, const uint32_t * indexes) {
-  VkImageView imageview = atomic_load(&image->image);
+  VkImageView imageview = (VkImageView)image->image;
 
   if(imageview == VK_NULL_HANDLE) {
     // TODO
@@ -1006,8 +1019,10 @@ void Backend_end_rendering(void) {
 
   vkEndCommandBuffer(_.command_buffers[0].data[_.rendering_cbuf].buffer);
 
-  vkQueue(
-      vkGetDeviceQueue(_.device, _.graphics_queue_family_index, 0)
+  VkQueue queue;
+  vkGetDeviceQueue(_.device, _.graphics_queue_family_index, 0, &queue);
+  vkQueueSubmit(
+      queue
     , 1
     , &(VkSubmitInfo) {
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO
@@ -1019,7 +1034,7 @@ void Backend_end_rendering(void) {
       , .signalSemaphoreCount = 1
       , .pSignalSemaphores    = &_.frame_gpu_graphics_to_gpu_present
       }
-    , &_.command_buffers[0].data[_.rendering_cbuf].fence
+    , _.command_buffers[0].data[_.rendering_cbuf].fence
     );
   
   glfwPollEvents();
@@ -1037,7 +1052,7 @@ void Backend_begin_2d(struct BackendMode2D mode) {
     , .maxDepth = 1
     };
 
-  VkRect2D scissor = { .offset = { viewport.x, viewport.y }, .extents = { viewport.width, viewport.height } };
+  VkRect2D scissor = { .offset = { viewport.x, viewport.y }, .extent = { viewport.width, viewport.height } };
   
   vkCmdBeginRenderPass(
       cbuf
@@ -1045,7 +1060,7 @@ void Backend_begin_2d(struct BackendMode2D mode) {
         .sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
       , .renderPass  = _.render_pass
       , .framebuffer = _.framebuffers.data[_.swapchain_current_index]
-      , .renderArea  = render_area
+      , .renderArea  = scissor
       , .clearValueCount = 2
       , .pClearValues = (VkClearValue[]) {
           { .color.float32 = { mode.background.r, mode.background.g, mode.background.b, mode.background.a } }

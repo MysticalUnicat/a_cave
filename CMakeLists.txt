@@ -11,9 +11,8 @@ add_subdirectory(ext/alias)
 add_subdirectory(ext/libuv)
 
 if(${BACKEND} STREQUAL "RAYLIB")
-  add_subdirectory(ext/raylib)
-  set(BACKEND_LIBRARIES raylib)
-  set(BACKEND_SOURCE src/engine/backend_raylib.c)
+	# raylib keeps being a disapointment
+  message(FATAL_ERROR "pos")
 elseif(${BACKEND} STREQUAL "GLFW")
   set(BUILD_SHARED_LIBS   OFF      CACHE BOOL   "" FORCE)
   set(GLFW_BUILD_EXAMPLES OFF      CACHE BOOL   "" FORCE)
@@ -26,7 +25,7 @@ elseif(${BACKEND} STREQUAL "GLFW")
   set(BACKEND_LIBRARIES glfw vulkan)
   set(BACKEND_SOURCE src/engine/backend_glfw.c src/engine/backend_vk.c)
 else()
-  message(FATAL_ERROR "set BACKEND to be either RAYLIB or GLFW")
+  message(FATAL_ERROR "set BACKEND to be GLFW")
 endif()
 
 add_library(a_engine
