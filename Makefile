@@ -3,6 +3,6 @@ SUBDIRS := $(dir $(wildcard */CMakeCache.txt))
 all: $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	@ $(MAKE) -C $@ -s -j
 
 .PHONY: $(SUBDIRS)
