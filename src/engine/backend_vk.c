@@ -10,7 +10,8 @@
 
 #include <uchar.h>
 
-#define GLFW_INCLUDE_VULKAN
+#include "glad_vk.h"
+
 #include <GLFW/glfw3.h>
 
 #include "stb_image.h"

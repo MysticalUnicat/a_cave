@@ -10,6 +10,7 @@
 #include <alias/color.h>
 
 #include <uv.h>
+#undef DrawText // WTF
 
 #include "util.h"
 

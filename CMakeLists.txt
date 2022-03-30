@@ -3,41 +3,43 @@ cmake_minimum_required(VERSION 3.1)
 
 project(a_cave LANGUAGES C)
 
-set(BACKEND GLFW CACHE STRING "backend to use")
+# for mingw builds
+if(WIN32)
+  set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static")
+endif()
 
+# build as static as possible
+set(BUILD_SHARED_LIBS   OFF      CACHE BOOL   "" FORCE)
+
+# Alias (functionality is moved from the engine to Alias)
 set(ALIAS_PROFILING ON CACHE BOOL "" FORCE)
 add_subdirectory(ext/alias)
 
+# libuv
 add_subdirectory(ext/libuv)
 
-if(${BACKEND} STREQUAL "RAYLIB")
-	# raylib keeps being a disapointment
-  message(FATAL_ERROR "pos")
-elseif(${BACKEND} STREQUAL "GLFW")
-  set(BUILD_SHARED_LIBS   OFF      CACHE BOOL   "" FORCE)
-  set(GLFW_BUILD_EXAMPLES OFF      CACHE BOOL   "" FORCE)
-  set(GLFW_BUILD_TESTS    OFF      CACHE BOOL   "" FORCE)
-  set(GLFW_BUILD_DOCS     OFF      CACHE BOOL   "" FORCE)
-  set(GLFW_INSTALL        OFF      CACHE BOOL   "" FORCE)
-  set(GLFW_LIBRARY_TYPE   "STATIC" CACHE STRING "" FORCE)
-  add_subdirectory(ext/glfw)
+# GLFW
+set(GLFW_BUILD_EXAMPLES OFF      CACHE BOOL   "" FORCE)
+set(GLFW_BUILD_TESTS    OFF      CACHE BOOL   "" FORCE)
+set(GLFW_BUILD_DOCS     OFF      CACHE BOOL   "" FORCE)
+set(GLFW_INSTALL        OFF      CACHE BOOL   "" FORCE)
+set(GLFW_LIBRARY_TYPE   "STATIC" CACHE STRING "" FORCE)
+add_subdirectory(ext/glfw)
 
-  set(BACKEND_LIBRARIES glfw vulkan)
-  set(BACKEND_SOURCE src/engine/backend_glfw.c src/engine/backend_vk.c)
-else()
-  message(FATAL_ERROR "set BACKEND to be GLFW")
-endif()
-
+# the engine as a library based on Alias (functionality is moved from games to engine)
 add_library(a_engine
   src/engine/cbuf.c
   src/engine/engine.c
   src/engine/image.c
 
-  ${BACKEND_SOURCE}
+  src/engine/backend_glfw.c
+  src/engine/backend_vk.c
+  src/engine/glad_vk.c
 )
-target_link_libraries(a_engine alias ${BACKEND_LIBRARIES} uv_a)
+target_link_libraries(a_engine alias glfw uv_a)
 target_include_directories(a_engine PRIVATE ext/stb)
 
+# the game
 add_executable(alias_town
   src/main.c
 
