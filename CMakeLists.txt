@@ -18,6 +18,22 @@ add_subdirectory(ext/alias)
 # libuv
 add_subdirectory(ext/libuv)
 
+# Vulkan headers
+ExternalProject_Add(
+  Vulkan-Headers
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ext/Vulkan-Headers
+  GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
+  INSTALL_COMMAND ""
+)
+
+# GLSL compiler
+ExternalProject_Add(
+  glslangValidator
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/ext/glslang
+  GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
+  INSTALL_COMMAND ""
+)
+
 # GLFW
 set(GLFW_BUILD_EXAMPLES OFF      CACHE BOOL   "" FORCE)
 set(GLFW_BUILD_TESTS    OFF      CACHE BOOL   "" FORCE)
@@ -34,10 +50,9 @@ add_library(a_engine
 
   src/engine/backend_glfw.c
   src/engine/backend_vk.c
-  src/engine/glad_vk.c
 )
 target_link_libraries(a_engine alias glfw uv_a)
-target_include_directories(a_engine PRIVATE ext/stb)
+target_include_directories(a_engine PRIVATE ext/stb ${CMAKE_CURRENT_BINARY_DIR}/ext/Vulkan-Headers/include)
 
 # the game
 add_executable(alias_town
