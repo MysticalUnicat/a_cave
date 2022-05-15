@@ -1,5 +1,9 @@
 #version 450
 
+#extension GL_GOOGLE_include_directive : require
+
+#include "backend_vk_conf.h"
+
 layout(set=0, binding=0) uniform Frame {
 	float real_time;
 	float real_time_delta;
@@ -29,7 +33,7 @@ struct Material {
 layout(set=2, binding=1) buffer MaterialBatch {
 	Material data[];
 } material_batch;
-layout(set=2, binding=2) uniform texture2D texture_batch[64];
+layout(set=2, binding=2) uniform texture2D texture_batch[VULKAN_UI_TEXTURE_BATCH_SIZE];
 
 layout(location=0) in flat uint f_texture;
 layout(location=1) in      vec4 f_rgba;

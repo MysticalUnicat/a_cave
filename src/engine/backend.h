@@ -13,6 +13,12 @@ float Backend_get_mouse_position_y(void);
 float Backend_get_time(void);
 float Backend_get_frame_time(void);
 
+enum BackendSampler {
+    BackendSampler_NEAREST
+  , BackendSampler_LINEAR
+  , NUM_BACKEND_SAMPLERS
+};
+
 struct BackendImage {
   uint32_t width;
   uint32_t height;

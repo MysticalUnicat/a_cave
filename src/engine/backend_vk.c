@@ -8,6 +8,8 @@
 #include <alias/data_structure/paged_soa.h>
 #include <alias/log.h>
 
+#include "backend_vk_conf.h"
+
 #include <alias/cpp.h>
 #define CLEAN(X,...) __VA_ARGS__
 #define CLEAN_ID() CLEAN
@@ -135,12 +137,12 @@ struct TempPage {
   VkDeviceSize used;
 };
 
-#define MAX_TEXTURES_PER_BATCH 64
+// VULKAN_UI_TEXTURE_BATCH_SIZE 64
 
 enum Binding {
     Binding_PerFrame // per frame buffer, samplers
   , Binding_PerView  // per view buffer
-  , Binding_PerDraw  // per draw storage buffer (batch of draw data), textures (MAX_TEXTURES_PER_BATCH), materials (index with texture, other params)
+  , Binding_PerDraw  // per draw storage buffer (batch of draw data), textures (VULKAN_UI_TEXTURE_BATCH_SIZE), materials (index with texture, other params)
 };
 
 #if 0
@@ -164,9 +166,6 @@ enum Binding {
   ] (indexed with draw parameter)
 2:2:
   [textures 64] (indexed with material)
-
-
-
 #endif
 
 static struct {
@@ -232,7 +231,7 @@ static struct {
 
   VkSampler samplers[NUM_BACKEND_SAMPLERS];
 
-  VkDescrptorSetLayout descriptor_set_layout;
+  VkDescriptorSetLayout descriptor_set_layout[3];
   VkPipelineLayout pipeline_layout;
 
   VkDescriptorPool descriptor_pool;
@@ -571,7 +570,13 @@ DEVICE_V(
 // typedef void (VKAPI_PTR *PFN_vkDestroyPipelineLayout)(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator);
 // typedef VkResult (VKAPI_PTR *PFN_vkCreateSampler)(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSampler* pSampler);
 // typedef void (VKAPI_PTR *PFN_vkDestroySampler)(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
-// typedef VkResult (VKAPI_PTR *PFN_vkCreateDescriptorSetLayout)(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout);
+DEVICE_R(
+    vkCreateDescriptorSetLayout
+  , DEVICE
+  , READ(VkDescriptorSetLayoutCreateInfo, pCreateInfo, 1)
+  , ALLOCATOR
+  , WRITE(VkDescriptorSetLayout, pSetLayout, 1)
+)
 // typedef void (VKAPI_PTR *PFN_vkDestroyDescriptorSetLayout)(VkDevice device, VkDescriptorSetLayout descriptorSetLayout, const VkAllocationCallbacks* pAllocator);
 // typedef VkResult (VKAPI_PTR *PFN_vkCreateDescriptorPool)(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool);
 // typedef void (VKAPI_PTR *PFN_vkDestroyDescriptorPool)(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks* pAllocator);
@@ -2043,20 +2048,66 @@ static bool create_framebuffers(void) {
 }
 
 // ====================================================================================================================
-static bool create_descriptor_set_layout(void) {
-
-  
+static bool create_descriptor_set_layouts(void) {
   vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
-    VkStructureType                        sType;
-    VkDescriptorSetLayoutCreateFlags       flags;
-    .bindingCount = 1
-    .pBindings = (VkDescriptorSetLayoutBinding[]) {
-    uint32_t              binding;
-    VkDescriptorType      descriptorType;
-    uint32_t              descriptorCount;
-    VkShaderStageFlags    stageFlags;
-    const VkSampler*      pImmutableSamplers;
-  }, &_.descriptor_set_layout);
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+    , .flags = 0
+    , .bindingCount = 2
+    , .pBindings = (VkDescriptorSetLayoutBinding[]) {
+        { // frame uniform buffer
+          .binding = 0
+        , .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+        , .descriptorCount = 1
+        , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      , { // samplers (to be immutable)
+          .binding = 1
+        , .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER
+        , .descriptorCount = 2
+        , .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      }
+    }, &_.descriptor_set_layout[0]);
+
+  vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+    , .flags = 0
+    , .bindingCount = 1
+    , .pBindings = (VkDescriptorSetLayoutBinding[]) {
+        { // view uniform buffer
+          .binding = 0
+        , .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+        , .descriptorCount = 1
+        , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      }
+    }, &_.descriptor_set_layout[1]);
+
+  vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+    , .flags = 0
+    , .bindingCount = 3
+    , .pBindings = (VkDescriptorSetLayoutBinding[]) {
+        { // draw parameters
+          .binding = 0
+        , .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+        , .descriptorCount = 1
+        , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      , { // batch of material information
+          .binding = 1
+        , .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+        , .descriptorCount = 1
+        , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      , { // batch of textures
+          .binding = 2
+        , .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+        , .descriptorCount = VULKAN_UI_TEXTURE_BATCH_SIZE
+        , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        }
+      }
+    }, &_.descriptor_set_layout[2]);
 }
 
 // ====================================================================================================================
@@ -2084,9 +2135,9 @@ bool Vulkan_init(uint32_t * width, uint32_t * height, GLFWwindow * window) {
     && create_staging_buffer()
     && create_render_pass()
     && create_pipeline_cache()
-    && create_descriptor_set_layout()
-    && create_pipeline_layout()
-    && create_ui_pipeline()
+    && create_descriptor_set_layouts()
+    //&& create_pipeline_layout()
+    //&& create_ui_pipeline()
 
     && create_swapchain(width, height, false)
     && create_depthbuffer()
@@ -2524,7 +2575,7 @@ void BackendVK_begin_rendering(uint32_t screen_width, uint32_t screen_height) {
       , .renderArea  = { .offset = { 0, 0 }, .extent = { _.swapchain_extents.width, _.swapchain_extents.height } }
       , .clearValueCount = 2
       , .pClearValues = (VkClearValue[]) {
-          { .color.float32 = { mode.background.r, mode.background.g, mode.background.b, mode.background.a } }
+          { .color.float32 = { 0, 0, 0, 1 } }
         , { .depthStencil.depth = 1, .depthStencil.stencil = 0 }
         }
       }
