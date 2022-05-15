@@ -233,7 +233,7 @@ static struct {
 
   VkDescriptorSetLayout descriptor_set_layout[3];
   VkPipelineLayout pipeline_layout;
-
+  VkPipeline ui_pipeline;
   VkDescriptorPool descriptor_pool;
 
   // begin recreation on resize
@@ -546,7 +546,13 @@ DEVICE_V(
   , VALUE(VkImageView, imageView)
   , ALLOCATOR
 )
-// typedef VkResult (VKAPI_PTR *PFN_vkCreateShaderModule)(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule);
+DEVICE_R(
+    vkCreateShaderModule
+  , DEVICE
+  , READ(VkShaderModuleCreateInfo, pCreateInfo, 1)
+  , ALLOCATOR
+  , WRITE(VkShaderModule, pShaderModule, 1)
+)
 // typedef void (VKAPI_PTR *PFN_vkDestroyShaderModule)(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
 DEVICE_R(
     vkCreatePipelineCache
@@ -563,12 +569,32 @@ DEVICE_V(
 )
 // typedef VkResult (VKAPI_PTR *PFN_vkGetPipelineCacheData)(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData);
 // typedef VkResult (VKAPI_PTR *PFN_vkMergePipelineCaches)(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount, const VkPipelineCache* pSrcCaches);
-// typedef VkResult (VKAPI_PTR *PFN_vkCreateGraphicsPipelines)(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+DEVICE_R(
+    vkCreateGraphicsPipelines
+  , DEVICE
+  , VALUE(VkPipelineCache, pipelineCache)
+  , VALUE(uint32_t, createInfoCount)
+  , READ(VkGraphicsPipelineCreateInfo, pCreateInfos, createInfoCount)
+  , ALLOCATOR
+  , WRITE(VkPipeline, pPipelines, createInfoCount)
+)
 // typedef VkResult (VKAPI_PTR *PFN_vkCreateComputePipelines)(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
 // typedef void (VKAPI_PTR *PFN_vkDestroyPipeline)(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
-// typedef VkResult (VKAPI_PTR *PFN_vkCreatePipelineLayout)(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout);
+DEVICE_R(
+    vkCreatePipelineLayout
+  , DEVICE
+  , READ(VkPipelineLayoutCreateInfo, pCreateInfo, 1)
+  , ALLOCATOR
+  , WRITE(VkPipelineLayout, pPipelineLayout, 1)
+)
 // typedef void (VKAPI_PTR *PFN_vkDestroyPipelineLayout)(VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator);
-// typedef VkResult (VKAPI_PTR *PFN_vkCreateSampler)(VkDevice device, const VkSamplerCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSampler* pSampler);
+DEVICE_R(
+    vkCreateSampler
+  , DEVICE
+  , READ(VkSamplerCreateInfo, pCreateInfo, 1)
+  , ALLOCATOR
+  , WRITE(VkSampler, pSampler, 1)
+)
 // typedef void (VKAPI_PTR *PFN_vkDestroySampler)(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
 DEVICE_R(
     vkCreateDescriptorSetLayout
@@ -2047,9 +2073,48 @@ static bool create_framebuffers(void) {
   return true;
 }
 
+
+// ====================================================================================================================
+static bool create_samplers(void) {
+  struct {
+    VkFilter min;
+    VkFilter max;
+    VkSamplerMipmapMode mipmap;
+  } data[NUM_BACKEND_SAMPLERS] = {
+      [BackendSampler_NEAREST] = { VK_FILTER_NEAREST, VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST }
+    , [BackendSampler_LINEAR] = { VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR }
+  };
+
+  for(uint32_t i = 0; i < NUM_BACKEND_SAMPLERS; i++) {
+     if(!report_vulkan_error("vkCreateSampler", vkCreateSampler(&(VkSamplerCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
+        , .flags = 0
+        , .magFilter = data[i].min
+        , .minFilter = data[i].max
+        , .mipmapMode = data[i].mipmap
+        , .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT
+        , .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT
+        , .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT
+        , .mipLodBias = 0
+        , .anisotropyEnable = VK_FALSE
+        , .maxAnisotropy = 0
+        , .compareEnable = VK_FALSE
+        , .compareOp = VK_COMPARE_OP_NEVER
+        , .minLod = 0
+        , .maxLod = 0
+        , .borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
+        , .unnormalizedCoordinates = VK_FALSE
+        }, &_.samplers[i]))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // ====================================================================================================================
 static bool create_descriptor_set_layouts(void) {
-  vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
+  if(!report_vulkan_error("vkCreateDescriptorSetLayout", vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
     , .flags = 0
     , .bindingCount = 2
@@ -2060,16 +2125,19 @@ static bool create_descriptor_set_layouts(void) {
         , .descriptorCount = 1
         , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
         }
-      , { // samplers (to be immutable)
+      , { // samplers
           .binding = 1
         , .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER
         , .descriptorCount = 2
         , .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+        , .pImmutableSamplers = _.samplers
         }
       }
-    }, &_.descriptor_set_layout[0]);
+    }, &_.descriptor_set_layout[0]))) {
+    return false;
+  }
 
-  vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
+  if(!report_vulkan_error("vkCreateDescriptorSetLayout", vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
     , .flags = 0
     , .bindingCount = 1
@@ -2081,9 +2149,11 @@ static bool create_descriptor_set_layouts(void) {
         , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
         }
       }
-    }, &_.descriptor_set_layout[1]);
+    }, &_.descriptor_set_layout[1]))) {
+    return false;
+  }
 
-  vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
+  if(!report_vulkan_error("vkCreateDescriptorSetLayout", vkCreateDescriptorSetLayout(&(VkDescriptorSetLayoutCreateInfo) {
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
     , .flags = 0
     , .bindingCount = 3
@@ -2107,7 +2177,190 @@ static bool create_descriptor_set_layouts(void) {
         , .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
         }
       }
-    }, &_.descriptor_set_layout[2]);
+    }, &_.descriptor_set_layout[2]))) {
+    return false;
+  }
+
+  return true;
+}
+
+// ====================================================================================================================
+static bool create_pipeline_layout(void) {
+  if(!report_vulkan_error("vkCreatePipelineLayout", vkCreatePipelineLayout(&(VkPipelineLayoutCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
+      , .setLayoutCount = 3
+      , .pSetLayouts = _.descriptor_set_layout
+    }, &_.pipeline_layout))) {
+    return false;
+  }
+
+  return true;
+}
+
+// ====================================================================================================================
+extern const uint32_t * _binary_engine_ui_vert_spv_start;
+extern const uint32_t * _binary_engine_ui_vert_spv_end;
+
+extern const uint32_t * _binary_engine_ui_frag_spv_start;
+extern const uint32_t * _binary_engine_ui_frag_spv_end;
+
+static bool create_ui_pipeline(void) {
+  VkShaderModule vert;
+  VkShaderModule frag;
+
+  if(!report_vulkan_error("vkCreateShaderModule", vkCreateShaderModule(&(VkShaderModuleCreateInfo) {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO
+    , .codeSize = _binary_engine_ui_vert_spv_end - _binary_engine_ui_vert_spv_start
+    , .pCode = _binary_engine_ui_vert_spv_start
+    }, &vert))) {
+    return false;
+  }
+
+  if(!report_vulkan_error("vkCreateShaderModule", vkCreateShaderModule(&(VkShaderModuleCreateInfo) {
+      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO
+    , .codeSize = _binary_engine_ui_frag_spv_end - _binary_engine_ui_frag_spv_start
+    , .pCode = _binary_engine_ui_frag_spv_start
+    }, &frag))) {
+    return false;
+  }
+
+  if(!report_vulkan_error("vkCreateGraphicsPipeline", vkCreateGraphicsPipelines(
+      _.pipelinecache
+    , 1
+    , &(VkGraphicsPipelineCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+      , .pNext = NULL
+      , .flags = 0
+      , .stageCount = 2
+      , .pStages = (VkPipelineShaderStageCreateInfo[]) {
+          {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO
+          , .stage = VK_SHADER_STAGE_VERTEX_BIT
+          , .module = vert
+          , .pName = "main"
+          }
+        , {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO
+          , .stage = VK_SHADER_STAGE_FRAGMENT_BIT
+          , .module = frag
+          , .pName = "main"
+          }
+        }
+      , .pVertexInputState = &(VkPipelineVertexInputStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+        , .vertexBindingDescriptionCount = 1
+        , .pVertexBindingDescriptions = &(VkVertexInputBindingDescription) {
+            .binding = 0
+          , .stride = sizeof(struct BackendUIVertex)
+          , .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+          }
+        , .vertexAttributeDescriptionCount = 3
+        , .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[]) {
+            {
+              .location = 0
+            , .binding = 0
+            , .format = VK_FORMAT_R32G32_SFLOAT
+            , .offset = offsetof(struct BackendUIVertex, xy)
+            }
+          , {
+              .location = 1
+            , .binding = 0
+            , .format = VK_FORMAT_R32G32B32A32_SFLOAT
+            , .offset = offsetof(struct BackendUIVertex, rgba)
+            }
+          , {
+              .location = 2
+            , .binding = 0
+            , .format = VK_FORMAT_R32G32_SFLOAT
+            , .offset = offsetof(struct BackendUIVertex, st)
+            }
+          }
+        }
+      , .pInputAssemblyState = &(VkPipelineInputAssemblyStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
+        , .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        , .primitiveRestartEnable = VK_FALSE
+        }
+      , .pViewportState = &(VkPipelineViewportStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO
+        , .viewportCount = 1
+        , .scissorCount = 1
+        }
+      , .pRasterizationState = &(VkPipelineRasterizationStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
+        , .depthClampEnable = VK_FALSE
+        , .rasterizerDiscardEnable = VK_FALSE
+        , .polygonMode = VK_POLYGON_MODE_FILL
+        , .cullMode = VK_CULL_MODE_BACK_BIT
+        , .frontFace = VK_FRONT_FACE_CLOCKWISE
+        , .depthBiasEnable = VK_FALSE
+        , .lineWidth = 1.0f
+        }
+      , .pDepthStencilState = &(VkPipelineDepthStencilStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
+        , .depthTestEnable = VK_FALSE
+        , .depthWriteEnable = VK_FALSE
+        , .depthCompareOp = VK_COMPARE_OP_NEVER
+        , .depthBoundsTestEnable = VK_FALSE
+        , .stencilTestEnable = VK_FALSE
+        , .front = (VkStencilOpState) {
+            .failOp = VK_STENCIL_OP_KEEP
+          , .passOp = VK_STENCIL_OP_KEEP
+          , .depthFailOp = VK_STENCIL_OP_KEEP
+          , .compareOp = VK_COMPARE_OP_NEVER
+          , .compareMask = 0
+          , .writeMask = 0
+          , .reference = 0
+          }
+        , .back = (VkStencilOpState) {
+            .failOp = VK_STENCIL_OP_KEEP
+          , .passOp = VK_STENCIL_OP_KEEP
+          , .depthFailOp = VK_STENCIL_OP_KEEP
+          , .compareOp = VK_COMPARE_OP_NEVER
+          , .compareMask = 0
+          , .writeMask = 0
+          , .reference = 0
+          }
+        , .minDepthBounds = 0.0f
+        , .maxDepthBounds = 1.0f
+        }
+      , .pColorBlendState = &(VkPipelineColorBlendStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
+        , .logicOpEnable = VK_FALSE
+        , .logicOp = VK_LOGIC_OP_CLEAR
+        , .attachmentCount = 1
+        , .pAttachments = &(VkPipelineColorBlendAttachmentState) {
+            .blendEnable = VK_TRUE
+          , .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA
+          , .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+          , .colorBlendOp = VK_BLEND_OP_ADD
+          , .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA
+          , .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+          , .alphaBlendOp = VK_BLEND_OP_ADD
+          , .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
+          }
+        , .blendConstants = { 0, 0, 0, 0 }
+        }
+      , .pDynamicState = &(VkPipelineDynamicStateCreateInfo) {
+          .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO
+        , .dynamicStateCount = 2
+        , .pDynamicStates = (VkDynamicState[]) {
+            VK_DYNAMIC_STATE_VIEWPORT
+          , VK_DYNAMIC_STATE_SCISSOR
+          }
+        }
+      , .layout = _.pipeline_layout
+      , .renderPass = _.render_pass
+      , .subpass = 0
+      , .basePipelineHandle = VK_NULL_HANDLE
+      , .basePipelineIndex = 0
+      }
+    , &_.ui_pipeline
+    ))) {
+    return false;
+  }
+
+  return true;
 }
 
 // ====================================================================================================================
@@ -2135,9 +2388,11 @@ bool Vulkan_init(uint32_t * width, uint32_t * height, GLFWwindow * window) {
     && create_staging_buffer()
     && create_render_pass()
     && create_pipeline_cache()
+
+    && create_samplers()
     && create_descriptor_set_layouts()
-    //&& create_pipeline_layout()
-    //&& create_ui_pipeline()
+    && create_pipeline_layout()
+    && create_ui_pipeline()
 
     && create_swapchain(width, height, false)
     && create_depthbuffer()
@@ -2561,7 +2816,7 @@ static void set_default_viewport_scissor(void) {
     });
 }
 
-void BackendVK_begin_rendering(uint32_t screen_width, uint32_t screen_height) {
+void Backend_begin_rendering(uint32_t screen_width, uint32_t screen_height) {
   vkAcquireNextImageKHR(_.swapchain, UINT64_MAX, _.frame_gpu_present_to_gpu_graphics, VK_NULL_HANDLE, &_.swapchain_current_index);
   _.rendering_cbuf = acquire_command_buffer(Graphics);
 
@@ -2585,7 +2840,7 @@ void BackendVK_begin_rendering(uint32_t screen_width, uint32_t screen_height) {
   set_default_viewport_scissor();
 }
 
-void BackendVK_end_rendering(void) {
+void Backend_end_rendering(void) {
   vkCmdEndRenderPass(_.command_buffers[Graphics].data[_.rendering_cbuf].buffer);
 
   VkSemaphore transfer_semaphore = VK_NULL_HANDLE;
