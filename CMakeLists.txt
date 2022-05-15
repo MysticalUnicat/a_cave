@@ -42,6 +42,25 @@ set(GLFW_INSTALL        OFF      CACHE BOOL   "" FORCE)
 set(GLFW_LIBRARY_TYPE   "STATIC" CACHE STRING "" FORCE)
 add_subdirectory(ext/glfw)
 
+# engine data
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_vert.o
+	COMMAND glslangValidator -V -o engine_ui_vert.spv ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/backend_vk_ui.vert
+  COMMAND ${CMAKE_LINKER} --relocatable --format binary --output engine_ui_vert.o engine_ui_vert.spv
+	DEPENDS src/engine/backend_vk_ui.vert
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_vert.spv
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_frag.o
+	COMMAND glslangValidator -V -o engine_ui_frag.spv ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/backend_vk_ui.frag
+  COMMAND ${CMAKE_LINKER} --relocatable --format binary --output engine_ui_frag.o engine_ui_frag.spv
+	DEPENDS src/engine/backend_vk_ui.frag
+  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_frag.spv
+	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 # the engine as a library based on Alias (functionality is moved from games to engine)
 add_library(a_engine
   src/engine/cbuf.c
@@ -50,6 +69,9 @@ add_library(a_engine
 
   src/engine/backend_glfw.c
   src/engine/backend_vk.c
+
+  ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_vert.o
+  ${CMAKE_CURRENT_BINARY_DIR}/engine_ui_frag.o
 )
 target_link_libraries(a_engine alias glfw uv_a)
 target_include_directories(a_engine PRIVATE ext/stb ${CMAKE_CURRENT_BINARY_DIR}/ext/Vulkan-Headers/include)
